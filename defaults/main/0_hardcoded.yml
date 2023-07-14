@@ -1,3 +1,7 @@
 ---
 
-
+OVPN_HC:
+  path:
+    # {path-base}/{instance}/...
+    cli: 'profile_templates'
+    pki: 'pki'

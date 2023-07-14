@@ -4,6 +4,25 @@ no_prompts: false
 debug: false
 
 # default config => is overwritten by provided config
-defaults_app: {}
+defaults_openvpn:
+  support:
+    auth_providers:
+      - 'system'  # linux system users; will add service-user to 'shadow' group to read password-hashes
+      - 'ldap'  # remote ldap servers
+      - 'totp'  # time-base one-time-tokens using 'libpam-google-authenticator'; will allow service binary to perform 'setuid' operation
+      - 'mfa'  # chain multiple authentication providers for multi-factor-authentication
 
-defaults_instance: {}
+  backup: true  # enable local backup-job
+
+  instances: {}
+
+
+defaults_instance:
+  state: 'present'
+  enabled: true
+  ips:
+  port:
+  support:
+    clients: ['windows', 'linux', 'macos', 'chromeos']
+  auth: []
+  proto: ['udp', 'tcp']

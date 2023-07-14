@@ -1,3 +1,3 @@
 ---
 
-APP_CONFIG: "{{ defaults_app | combine(app, recursive=true) }}"
+OVPN_CONFIG: "{{ defaults_openvpn | combine(openvpn, recursive=true) }}"

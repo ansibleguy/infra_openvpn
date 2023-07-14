@@ -1,21 +1,14 @@
-from re import sub as regex_replace
-
-
 class FilterModule(object):
 
     def filters(self):
         return {
-            "safe_key": self.safe_key,
-            "fallback": self.fallback,
+            "ensure_list": self.ensure_list,
         }
 
     @staticmethod
-    def safe_key(key: str) -> str:
-        return regex_replace('[^0-9a-zA-Z]+', '', key.replace(' ', '_'))
+    def ensure_list(data: (str, list)) -> list:
+        # if user supplied a string instead of a list => convert it to match our expectations
+        if isinstance(data, list):
+            return data
 
-    @staticmethod
-    def fallback(opt1: str, opt2: str) -> str:
-        if opt1 not in [None, '', 'None', 'none', ' ']:
-            return opt1
-
-        return opt2
+        return [data]

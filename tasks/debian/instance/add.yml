@@ -1,0 +1,11 @@
+---
+
+# add directories
+# add server config
+# enable & start service
+# add auth-wrapper (instance-specific auth-providers/-config)
+# add auth-providers
+# initialize pki
+
+- name: "OpenVPN | Instance {{ server_name }} | Add profile templates"
+  ansible.builtin.include_tasks: debian/instance/profile_templates.yml

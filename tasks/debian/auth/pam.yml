@@ -1,0 +1,5 @@
+---
+
+# add generic pam-auth script
+# add pre-defined or user-defined pam scripts
+# add privileges if needed (system-auth => shadow group membership)

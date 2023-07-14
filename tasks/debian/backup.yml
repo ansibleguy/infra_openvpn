@@ -1,0 +1,3 @@
+---
+
+# add generic backup of the whole openvpn directory structure via tar to /var/backups/openvpn

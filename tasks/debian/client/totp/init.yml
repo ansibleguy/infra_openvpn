@@ -1,0 +1,6 @@
+---
+
+# todo: option to use custom totp algorithm (generic psk + share script)
+
+# install dependencies and add pam file
+#

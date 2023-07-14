@@ -3,7 +3,8 @@
 - name: OpenVPN | Checking config
   ansible.builtin.assert:
     that:
-      - app is defined
+      - openvpn is defined
+      - openvpn.instances | length > 0
   tags: always
 
 - name: OpenVPN | Processing debian config

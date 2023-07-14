@@ -1,7 +1,10 @@
 ---
 
-- name: OpenVPN | Task
-  ansible.builtin.apt:
-    pkg: "{{ something }}"
-    state: present
-  tags: [base]
+# todo: option to allow firewall to be managed by role (nftables)
+
+- name: OpenVPN | Setup
+  ansible.builtin.import_tasks: debian/setup.yml
+
+- name: OpenVPN | Setup
+  ansible.builtin.include_tasks: debian/instance/main.yml
+

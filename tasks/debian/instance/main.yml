@@ -1,0 +1,50 @@
+---
+
+- name: OpenVPN | Initialize
+  ansible.builtin.import_tasks: debian/instance/init.yml
+
+- name: OpenVPN | Add server instances
+  ansible.builtin.include_tasks: debian/instance/add.yml
+  when:
+    - server.state != 'absent'
+    - server.enabled | bool
+  vars:
+    server_name: "{{ instance_item.key }}"
+    server: "{{ instance_item.value }}"
+  loop_control:
+    loop_var: instance_item
+  with_dict: "{{ OVPN_CONFIG.instances }}"
+
+- name: OpenVPN | Enable server instances
+  ansible.builtin.include_tasks: debian/instance/enable.yml
+  when:
+    - server.state != 'absent'
+    - server.enabled | bool
+  vars:
+    server_name: "{{ instance_item.key }}"
+    server: "{{ instance_item.value }}"
+  loop_control:
+    loop_var: instance_item
+  with_dict: "{{ OVPN_CONFIG.instances }}"
+
+- name: OpenVPN | Disable server instances
+  ansible.builtin.include_tasks: debian/instance/disable.yml
+  when:
+    - server.state != 'absent'
+    - not server.enabled | bool
+  vars:
+    server_name: "{{ instance_item.key }}"
+    server: "{{ instance_item.value }}"
+  loop_control:
+    loop_var: instance_item
+  with_dict: "{{ OVPN_CONFIG.instances }}"
+
+- name: OpenVPN | Remove server instances
+  ansible.builtin.include_tasks: debian/instance/remove.yml
+  when: server.state == 'absent'
+  vars:
+    server_name: "{{ instance_item.key }}"
+    server: "{{ instance_item.value }}"
+  loop_control:
+    loop_var: instance_item
+  with_dict: "{{ OVPN_CONFIG.instances }}"

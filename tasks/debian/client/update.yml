@@ -1,0 +1,7 @@
+---
+
+- name: "OpenVPN | Instance {{ server_name }} | Client {{ client.name }} | Renew Certificate"
+  ansible.builtin.include_tasks: debian/client/cert/renew.yml
+
+- name: "OpenVPN | Instance {{ server_name }} | Client {{ client.name }} | Renew TOTP-Token"
+  ansible.builtin.include_tasks: debian/client/totp/renew.yml
