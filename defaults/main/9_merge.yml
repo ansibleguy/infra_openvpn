@@ -1,0 +1,3 @@
+---
+
+APP_CONFIG: "{{ defaults_app | combine(app, recursive=true) }}"

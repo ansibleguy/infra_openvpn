@@ -1,0 +1,10 @@
+---
+
+# ansible-playbook -K -D -i inventory/hosts.yml playbook.yml
+
+- name: OpenVPN Client-to-Site
+  hosts: all   # should be limited
+  become: true
+  gather_facts: yes
+  roles:
+    - ansibleguy.infra_openvpn
