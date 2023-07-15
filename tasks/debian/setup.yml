@@ -1,5 +1,71 @@
 ---
 
-# add openvpn repo
-# install openvpn package
-# install other generic dependencies
+- name: OpenVPN | Setup | Adding repository key
+  ansible.builtin.apt_key:
+    url: "{{ OVPN_HC.repo.gpg }}"
+    state: present
+
+- name: OpenVPN | Setup | Adding repository
+  ansible.builtin.apt_repository:
+    repo: "deb {{ OVPN_HC.repo.url }} {{ ansible_distribution_release }} main"
+    state: present
+    update_cache: true
+    filename: 'openvpn'
+
+- name: OpenVPN | Setup | Installing dependencies
+  ansible.builtin.apt:
+    name: ['openssl', 'python3-pexpect']
+    state: present
+
+- name: OpenVPN | Setup | Installing
+  ansible.builtin.apt:
+    name: 'openvpn'
+    state: present
+
+- name: OpenVPN | Setup | Creating service user
+  ansible.builtin.user:
+    name: "{{ OVPN_HC.user }}"
+    shell: '/sbin/nologin'
+
+- name: OpenVPN | Setup | Adding capabilities to bind to system-ports (<1024)
+  community.general.capabilities:
+    path: '/usr/sbin/openvpn'
+    capability: 'cap_net_bind_service+eip'
+    state: present
+  changed_when: false
+
+- name: OpenVPN | Setup | Adding directories
+  ansible.builtin.file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ OVPN_HC.user }}"
+    group: "{{ server.group_read }}"
+    mode: 750
+  loop:
+    - "{{ OVPN_CONFIG.path.base }}"
+    - "{{ OVPN_CONFIG.path.lib }}"
+    - "{{ OVPN_HC.path.run }}"
+
+- name: OpenVPN | Setup | Adding directories \#2
+  ansible.builtin.file:
+    state: directory
+    path: "{{ item }}"
+    owner: 'root'
+    group: 'root'
+    mode: 755
+  loop:
+    - "/etc/systemd/system/openvpn@.service.d"
+
+- name: OpenVPN | Setup | Service override
+  ansible.builtin.template:
+    src: 'templates/etc/systemd/system/openvpn@.service.d/override.conf.j2'
+    dest: '/etc/systemd/system/openvpn@.service.d/override.conf'
+    owner: 'root'
+    group: 'root'
+    mode: 0644
+  register: ovpn_override_config  # todo: restart with prompt
+
+- name: OpenVPN | Setup | Systemd Daemon-Reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: ovpn_override_config.changed

@@ -1,8 +1,11 @@
-class FilterModule(object):
+from re import sub as regex_replace
 
+
+class FilterModule(object):
     def filters(self):
         return {
             "ensure_list": self.ensure_list,
+            "safe_int_name": self.safe_int_name,
         }
 
     @staticmethod
@@ -12,3 +15,7 @@ class FilterModule(object):
             return data
 
         return [data]
+
+    @staticmethod
+    def safe_int_name(key: str) -> str:
+        return regex_replace('[^a-zA-Z0-9_=+.-]', '', key.replace(' ', '_'))[:15]

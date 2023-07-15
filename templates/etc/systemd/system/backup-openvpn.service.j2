@@ -1,0 +1,24 @@
+# {{ ansible_managed }}
+# ansibleguy.infra_openvpn
+
+# NOTE:
+#   restore: tar xJf {{ OVPN_CONFIG.path.backup }}/{DATETIME}.tar.xz
+
+[Unit]
+Description=Service to create a local backup of the OpenVPN directories
+Documentation=https://github.com/ansibleguy/infra_openvpn
+ConditionPathExists={{ path_backup }}
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/bin/bash -c 'tar cJf "{{ OVPN_CONFIG.path.backup }}/$(date '+%Y-%m-%d_%H-%M-%S').tar.xz" {{ OVPN_CONFIG.path.base }}'
+{% if ansible_distribution_version == '10' %}
+StandardOutput=syslog
+StandardError=syslog
+{% else %}
+StandardOutput=journal
+StandardError=journal
+{% endif %}
+SyslogIdentifier=openvpn_backup

@@ -2,3 +2,10 @@
 
 # remove directory
 # remove auth-providers
+
+- name: "OpenVPN | Instance {{ server_name }} | Remove | Directories"
+  ansible.builtin.file:
+    state: absent
+    path: "{{ item }}"
+  loop:
+    - "{{ server_base_dir }}"

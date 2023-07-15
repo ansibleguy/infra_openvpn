@@ -11,6 +11,7 @@
   vars:
     server_name: "{{ instance_item.key }}"
     server: "{{ instance_item.value }}"
+    server_base_dir: "{{ OVPN_CONFIG.path.base }}/{{ OVPN_CONFIG.prefix_instance }}{{ server_name }}"
   loop_control:
     loop_var: instance_item
   with_dict: "{{ OVPN_CONFIG.instances }}"
@@ -45,6 +46,7 @@
   vars:
     server_name: "{{ instance_item.key }}"
     server: "{{ instance_item.value }}"
+    server_base_dir: "{{ OVPN_CONFIG.path.base }}/{{ OVPN_CONFIG.prefix_instance }}{{ server_name }}"
   loop_control:
     loop_var: instance_item
   with_dict: "{{ OVPN_CONFIG.instances }}"

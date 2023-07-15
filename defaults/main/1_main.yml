@@ -1,28 +1,86 @@
 ---
 
+# for openvpn options - see: https://community.openvpn.net/openvpn/wiki
+
 no_prompts: false
 debug: false
 
 # default config => is overwritten by provided config
 defaults_openvpn:
   support:
+    clients: ['windows', 'linux', 'macos', 'chromeos']
     auth_providers:
       - 'system'  # linux system users; will add service-user to 'shadow' group to read password-hashes
       - 'ldap'  # remote ldap servers
       - 'totp'  # time-base one-time-tokens using 'libpam-google-authenticator'; will allow service binary to perform 'setuid' operation
       - 'mfa'  # chain multiple authentication providers for multi-factor-authentication
 
-  backup: true  # enable local backup-job
+  path:
+    base: '/etc/openvpn'
+    lib: '/var/local/lib/openvpn'
+
+  prefix_instance: 'server_'
+
+  backup:
+    enable: true  # enable local backup-job
+    service: 'backup-openvpn'
+    time: 'Sun 00:00'
+    # for date-time format see:
+    #   https://wiki.archlinux.org/title/Systemd/Timers
+    #   https://silentlad.com/systemd-timers-oncalendar-(cron)-format-explained
 
   instances: {}
 
-
 defaults_instance:
-  state: 'present'
-  enabled: true
-  ips:
+  state: 'present'  # or 'absent'
+  enabled: true  # keep instance, but stop & disable its service
+  ips: []
+  proto: 'udp'  # or 'tcp'
   port:
   support:
     clients: ['windows', 'linux', 'macos', 'chromeos']
-  auth: []
-  proto: ['udp', 'tcp']
+  session_timeout_sec: 86400  # 24h; set to empty value to disable; time until key-renegotiation - set only on server-side
+  keepalive: '10 120'  # interval + timeout
+  log_level: 2
+  group_read: 'monitoring'  # group that has read-only access to active-connections and public certificates (expiration); if none should be used => set to 'openvpn'
+  compress: true
+  persistent_ips: true
+  management_socket: false
+  active_connections: true
+  user_multi_connection: true  # allow one user to connect multiple times simultaneously
+  additional_config_lines: []
+  interface_prefix: 'ovpn'
+  log: 'syslog'  # or file
+  mtu: 1420
+  push:
+    routes: []
+    dhcp_options: []
+    dns_servers: []  # translated to 'dhcp-option DNS'
+  auth_providers: []  # 'certificate', 'ldap', 'system', 'totp'
+  pki:
+    cn:
+      # 'instance_name' will be replaced; whitespace will be replaced by '-'
+      ca: "OpenVPN CA $instance_name"
+      server: "OpenVPN Server $instance_name"
+    org:
+    ou:
+    email:
+    country:
+    state:
+    city:
+    runtime_days:
+      ca: 7300  # 20 yearss
+      server: 7300  # 20 years
+      client: 1095  # 3 years
+  security:
+    # see: https://community.openvpn.net/openvpn/wiki/CipherNegotiation
+    tls_min_version: '1.2'
+    cipher:
+      data: 'AES-256-GCM:AES-128-GCM:AES-256-CBC'
+      # directly passed to openssl - see: https://wiki.openssl.org/index.php/TLS1.3#Ciphersuites
+      tls: 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:\
+      TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:TLS_DHE_RSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:\
+      TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:\
+      TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:TLS_DHE_RSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256'
+    hash_algo: 'SHA512'
+    tls_crypt: true  # NO SUPPORT FOR CHROMEOS!

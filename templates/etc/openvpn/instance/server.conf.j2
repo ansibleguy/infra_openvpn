@@ -1,0 +1,98 @@
+# {{ ansible_managed }}
+# ansibleguy.infra_openvpn
+
+### BASICS ###
+mode server
+verb {{ server.log_level }}
+keepalive {{ server.keepalive }}
+ping-timer-rem
+persist-tun
+persist-key
+{% if server.session_timeout_sec | default(none, true) is not none %}
+reneg-sec {{ server.session_timeout_sec }}
+{% endif %}
+{% if server.compress | bool %}
+compress
+{% endif %}
+{% if server.log != 'syslog' %}
+log-append {{ server.log }}
+{% endif %}
+
+{% if server.active_connections | bool %}
+status {{ server_base_dir }}/{{ OVPN_HC.file.active }}
+{% endif %}
+{% if server.management_socket | bool %}
+management {{ OVPN_HC.path.run }}/{{ OVPN_CONFIG.prefixserver }}{{ server_name }}_mgmt.sock unix
+{% endif %}
+
+### NETWORK ###
+topology subnet
+dev-type tun
+dev {{ OVPN_CONFIG.interface_prefix + '_' + server_name | safe_int_name }}
+tun-mtu {{ server.mtu }}
+{% for ip in server.ips | ensure_list %}
+local {{ ip }}
+{% endfor %}
+
+proto {{ server.proto }}
+server {{ server.network }}
+lport {{ server.port }}
+
+{% if server.persistent_ips | bool %}
+ifconfig-pool-persist {{ server_base_dir }}/{{ OVPN_HC.file.persist }}
+{% endif %}
+
+{% for route in server.push.routes | ensure_list %}
+push "route {{ route }}"
+{% endfor %}
+
+{% for option in server.push.dhcp_options | ensure_list %}
+push "dhcp-option {{ option }}"
+{% endfor %}
+
+{% for server in server.push.dns_servers | ensure_list %}
+push "dhcp-option DNS {{ server }}"
+{% endfor %}
+
+### ENCRYPTION ###
+tls-server
+ca {{ server_base_dir }}/{{ OVPN_HC.dir.pki_sub }}/ca.crt
+crl-verify {{ server_base_dir }}/{{ OVPN_HC.dir.pki_sub }}/crl.pem
+dh {{ server_base_dir }}/{{ OVPN_HC.dir.pki_sub }}/dh.pem
+
+cert {{ server_base_dir }}/{{ OVPN_HC.dir.pki_sub }}/issued/{{ OVPN_HC.cert_server }}.crt
+key {{ server_base_dir }}/{{ OVPN_HC.dir.pki_sub }}/private/{{ OVPN_HC.cert_server }}.key
+
+data-ciphers {{ server.security.cipher.data }}
+tls-cipher {{ server.security.cipher.tls }}
+tls-version-min {{ server.security.tls_min_version }}
+auth {{ server.security.cipher.hash_algo }}
+
+### AUTHENTICATION ###
+## TLS-AUTH
+{% if server.security.tls_crypt | bool %}
+tls-crypt {{ server_base_dir }}/{{ OVPN_HC.file.tls_auth_key }}
+{% else %}
+tls-auth {{ server_base_dir }}/{{ OVPN_HC.file.tls_auth_key }}
+{% endif %}
+
+## CERTIFICATES
+{% if 'certificate' in server.auth_providers %}
+verify-client-cert require
+remote-cert-eku "TLS Web Client Authentication"
+{% else %}
+verify-client-cert none
+{% endif %}
+
+## CREDENTIALS
+script-security 2
+auth-user-pass-verify "{{ server_base_dir }}/auth.py" via-file
+username-as-common-name
+{% if server.user_multi_connection | bool %}
+duplicate-cn
+{% endif %}
+
+### CUSTOM ###
+{% for line in server.additional_config_lines | ensure_list %}
+{{ line }}
+{% endfor %}

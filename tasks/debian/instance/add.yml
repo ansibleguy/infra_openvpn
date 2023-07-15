@@ -7,5 +7,38 @@
 # add auth-providers
 # initialize pki
 
-- name: "OpenVPN | Instance {{ server_name }} | Add profile templates"
+- name: "OpenVPN | Instance {{ server_name }} | Add | Validating config"
+  ansible.builtin.assert:
+    that:
+      - server.ips | ensure_list > 0
+      - server.auth_providers | ensure_list > 0
+      - "server.proto in ['tcp', 'udp']"
+      - server.port | int > 0
+      - server.port | int < 65536
+      - server.log_level | int > 0
+      - server.log_level | int < 10
+      - "' ' in server.keepalive"
+
+- name: "OpenVPN | Instance {{ server_name }} | Add | Directories"
+  ansible.builtin.file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ OVPN_HC.user }}"
+    group: "{{ server.group_read }}"
+    mode: 750
+  loop:
+    - "{{ server_base_dir }}"
+    - "{{ server_base_dir }}/{{ OVPN_HC.dir.profile }}"
+    - "{{ server_base_dir }}/{{ OVPN_HC.dir.pki }}"
+
+- name: "OpenVPN | Instance {{ server_name }} | Add | Config"
+  ansible.builtin.template:
+    src: 'templates/etc/openvpn/instance/server.conf.j2'
+    dest: "{{ server_base_dir }}/server.conf"
+    owner: "{{ OVPN_HC.user }}"
+    group: "{{ server.group_read }}"
+    mode: 0440
+  register: ovpn_server_config  # todo: restart with prompt
+
+- name: "OpenVPN | Instance {{ server_name }} | Add | Profile templates"
   ansible.builtin.include_tasks: debian/instance/profile_templates.yml

@@ -1,3 +1,11 @@
 ---
 
-# start & enable service
+- name: "OpenVPN | Instance {{ server_name }} | Enabling service"
+  ansible.builtin.systemd:
+    name: 'openvpn@{{ server_name }}.service'
+    enabled: true
+
+- name: "OpenVPN | Instance {{ server_name }} | Starting service"
+  ansible.builtin.systemd:
+    name: 'openvpn@{{ server_name }}.service'
+    state: started

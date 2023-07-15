@@ -1,0 +1,13 @@
+# {{ ansible_managed }}
+# ansibleguy.infra_openvpn
+
+[Unit]
+Description=Timer to create a local backup of the OpenVPN directories
+
+[Timer]
+OnCalendar={{ OVPN_CONFIG.backup.time }}
+Persistent=false
+WakeSystem=false
+
+[Install]
+WantedBy=multi-user.target

@@ -5,6 +5,8 @@
 - name: OpenVPN | Setup
   ansible.builtin.import_tasks: debian/setup.yml
 
-- name: OpenVPN | Setup
-  ansible.builtin.include_tasks: debian/instance/main.yml
+- name: OpenVPN | Backup
+  ansible.builtin.import_tasks: debian/backup.yml
 
+- name: OpenVPN | Server instances
+  ansible.builtin.import_tasks: debian/instance/main.yml

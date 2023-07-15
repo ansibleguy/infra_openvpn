@@ -1,3 +1,16 @@
 ---
 
-# build profile templates for all supported client-types (used in client-generation)
+- name: "OpenVPN | Instance {{ server_name }} | Profile Templates"
+  ansible.builtin.template:
+    src: 'templates/etc/openvpn/instance/profile_templates/{{ item }}.j2'
+    dest: "{{ server_base_dir }}/{{ OVPN_HC.dir.profile }}/{{ item }}"
+    owner: "{{ OVPN_HC.user }}"
+    group: "{{ OVPN_HC.user }}"
+    mode: 0400
+  no_log: true
+  when: "item.split('.')[0] in server.support.clients"
+  loop:
+    - 'windows.conf'
+    - 'linux.conf'
+    - 'macos.conf'
+    - 'chromeos.onc'

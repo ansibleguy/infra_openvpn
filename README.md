@@ -71,6 +71,27 @@ ansible-galaxy install -r requirements.yml
 
 ## Info
 
+* **Info:** If you want to know more about configuring OpenVPN-community - check out their [comprehensive documentation](https://community.openvpn.net/openvpn/wiki)
+
+  Interesting pages:
+
+  * [Security overview](https://community.openvpn.net/openvpn/wiki/SecurityOverview)
+
+  * [Hardening](https://openvpn.net/community-resources/hardening-openvpn-security/), [Hardening (older Version)](https://community.openvpn.net/openvpn/wiki/Hardening)
+
+* **Info:** **ChromeOS** uses the Open-Network-Configuration (_ONC_) format.
+
+  It is formatted in JSON and pretty hard to debug as you do not get any useful error messages.
+
+  The profile-template provided by this role might not work for every edge-case.
+
+  If you need to troubleshoot it - look into the [ONC documentation](https://chromium.googlesource.com/chromium/src/+/main/components/onc/docs/onc_spec.md#OpenVPN-type).
+  But be aware: not every option might work practically as documented..
+
+
+* **Warning:** If a OpenVPN instance should support connections to **ChromeOS** clients - you will need to set the 'openvpn.instances.[name].security.tls_crypt' option to 'false' as this is not (_currently_) supported by the ChromeOS implementation.
+
+
 * **Note:** this role currently only supports debian-based systems
 
 
