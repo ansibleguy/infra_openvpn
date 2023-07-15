@@ -1,0 +1,85 @@
+---
+
+- name: OpenVPN | Export Profile | Certs | Listing existing certificates
+  ansible.builtin.command: "ls {{ server_base_dir }}/{{ OVPN_HC.dir.pki.public }}"
+  check_mode: false
+  register: ovpn_ep_certs
+
+- name: OpenVPN | Export Profile | Certs | Searching certificate by client-name
+  ansible.builtin.set_fact:
+    client_cert: "{{ ovpn_ep_certs.stdout | regex_search(cert_match) }}"
+  vars:
+    cert_match: "{{ OVPN_HC.cert_client_prefix + '_' + client_name + '_[a-f,0-9]{8}-[a-f,0-9]{4}-[a-f,0-9]{4}-[a-f,0-9]{4}-[a-f,0-9]{12}' }}"
+  when:
+    - not client_name | default(none, true) is none
+    - ovpn_ep_certs.stdout is regex(cert_match)
+
+- name: OpenVPN | Export Profile | Certs | Searching certificate by client-id
+  ansible.builtin.set_fact:
+    client_cert: "{{ ovpn_ep_certs.stdout | regex_search(cert_match) }}"
+  vars:
+    cert_match: "{{ OVPN_HC.cert_client_prefix + '_.*?_' + client_id }}"
+  when:
+    - client_id is defined
+    - ovpn_ep_certs.stdout is regex(cert_match)
+
+- name: OpenVPN | Export Profile | Certs | Unable to generate certificate
+  ansible.builtin.fail:
+    msg: "You need to supply the 'client_name' to generate a new certificate!"
+  when:
+    - client_cert is undefined
+    - client_name | default(none, true) is none
+
+- name: OpenVPN | Export Profile | Certs | Asking user
+  ansible.builtin.pause:
+    prompt: "No client certificate was found for '{{ client_name }}' - should one be generated?"
+  register: ovpn_ep_cert_gen
+  when: not no_prompts | bool
+
+- name: OpenVPN | Export Profile | Certs | Don't generate certificate
+  ansible.builtin.fail:
+    msg: 'No client certificate available!'
+  when:
+    - not no_prompts | bool
+    - not ovpn_ep_cert_gen.user_input | bool
+
+- name: OpenVPN | Export Profile | Certs | Generating certificate
+  ansible.builtin.import_tasks: debian/client/cert/add.yml
+  vars:
+    cert_uuid: "{{ none | get_uuid }}"
+  when: client_cert is undefined
+
+- name: OpenVPN | Export Profile | Certs | Saving new certificate name
+  ansible.builtin.set_fact:
+    client_cert: "{{ OVPN_HC.cert_client_prefix + '_' + client_name + '_' + cert_uuid }}"
+  when: client_cert is undefined
+
+- name: OpenVPN | Export Profile | Certs | Pulling CA public-key
+  ansible.builtin.command: "cat {{ server_base_dir }}/{{ OVPN_HC.dir.pki.base }}/{{ OVPN_HC.file.ca }}"
+  changed_when: false
+  check_mode: false
+  register: ovpn_ep_cert_ca_pub
+  when: export_os != 'chromeos'
+
+- name: OpenVPN | Export Profile | Certs | Pulling client public-key
+  ansible.builtin.command: "cat {{ server_base_dir }}/{{ OVPN_HC.dir.pki.public }}/{{ client_cert }}.{{ OVPN_HC.ext.crt }}"
+  changed_when: false
+  check_mode: false
+  register: ovpn_ep_cert_cli_pub
+  when: export_os != 'chromeos'
+
+- name: OpenVPN | Export Profile | Certs | Pulling client private-key
+  ansible.builtin.command: "cat {{ server_base_dir }}/{{ OVPN_HC.dir.pki.private }}/{{ client_cert }}.{{ OVPN_HC.ext.key }}"
+  changed_when: false
+  check_mode: false
+  no_log: true
+  register: ovpn_ep_cert_cli_pk
+  when: export_os != 'chromeos'
+
+- name: OpenVPN | Export Profile | Certs | Pulling client private-key for ChromeOS
+  ansible.builtin.command: "cat {{ server_base_dir }}/{{ OVPN_HC.dir.pki.private }}/{{ client_cert }}.{{ OVPN_HC.ext.p12_chromeos }}"
+  changed_when: false
+  check_mode: false
+  no_log: true
+  register: ovpn_ep_cert_cli_pk_chromeos
+  when: export_os == 'chromeos'

@@ -1,11 +1,11 @@
 ---
 
-- name: "OpenVPN | Instance {{ server_name }} | Disabling service"
+- name: "OpenVPN | Server {{ server_name }} | Disabling service"
   ansible.builtin.systemd:
     name: 'openvpn@{{ server_name }}.service'
     enabled: false
 
-- name: "OpenVPN | Instance {{ server_name }} | Stopping service"
+- name: "OpenVPN | Server {{ server_name }} | Stopping service"
   ansible.builtin.systemd:
     name: 'openvpn@{{ server_name }}.service'
     state: stopped

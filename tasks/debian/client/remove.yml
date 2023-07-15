@@ -1,7 +1,7 @@
 ---
 
-- name: "OpenVPN | Instance {{ server_name }} | Client {{ client.name }} | Remove Certificate"
+- name: "OpenVPN | Server {{ server_name }} | Client {{ client.name }} | Remove Certificate"
   ansible.builtin.include_tasks: debian/client/cert/remove.yml
 
-- name: "OpenVPN | Instance {{ server_name }} | Client {{ client.name }} | Remove TOTP-Token"
+- name: "OpenVPN | Server {{ server_name }} | Client {{ client.name }} | Remove TOTP-Token"
   ansible.builtin.include_tasks: debian/client/totp/remove.yml

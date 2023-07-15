@@ -4,14 +4,14 @@
 # add system user
 # add privileges if needed
 
-- name: "OpenVPN | Instance {{ server_name }} | Touching files"
+- name: "OpenVPN | Server {{ server_name }} | Touching files"
   ansible.builtin.file:
-    path: "{{ server_base_dir }}/{{ item }}"
+    path: "{{ item }}"
     state: touch
     owner: "{{ OVPN_HC.user }}"
     group: "{{ server.group_read }}"
     mode: 0640
   diff: false
   loop:
-    - "{{ OVPN_HC.file.active }}"
-    - "{{ OVPN_HC.file.persist }}"
+    - "{{ OVPN_HC.path.run }}/{{ OVPN_HC.file.status }}"
+    - "{{ server_base_dir }}/{{ OVPN_HC.file.persist }}"

@@ -1,0 +1,51 @@
+---
+
+- name: "OpenVPN | Server {{ server_name }} | Cert | Add | Checking if P12 in Base64-encoding exists"
+  ansible.builtin.stat:
+    path: "{{ client_cert_chromeos }}"
+  register: ovpn_crt_chromeos
+
+- name: "OpenVPN | Server {{ server_name }} | Cert | Add | ChromeOS P12 in Base64-encoding"
+  ansible.builtin.block:
+    - name: "OpenVPN | Server {{ server_name }} | Cert | Add | ChromeOS P12 in Base64-encoding (1/5)"
+      ansible.builtin.tempfile:
+        state: file
+        suffix: 'temp'
+      register: ovpn_crt_chromeos_p12
+      check_mode: false
+
+    - name: "OpenVPN | Server {{ server_name }} | Cert | Add | ChromeOS P12 in Base64-encoding (2/5)"
+      ansible.builtin.command: "openssl pkcs12 -in {{ server_base_dir }}/{{ OVPN_HC.dir.pki.private }}/{{ client_cert }}.p12
+      -passin pass:'{{ server.pki.pwd.client }}' -out {{ ovpn_crt_chromeos_p12.path }} -nodes"
+      no_log: true
+      check_mode: false
+
+    - name: "OpenVPN | Server {{ server_name }} | Cert | Add | ChromeOS P12 in Base64-encoding (3/5)"
+      ansible.builtin.shell: "openssl pkcs12 -export -in {{ ovpn_crt_chromeos_p12.path }} -passout pass:'' |
+      base64 | sed ':a;N;$!ba;s/\\n//g'"
+      args:
+        executable: '/bin/bash'
+      no_log: true
+      check_mode: false
+      tags: [skip_ansible_lint]  # pipefail will make it unusable
+      register: ovpn_crt_chromeos_p12_b64
+
+    - name: "OpenVPN | Server {{ server_name }} | Cert | Add | ChromeOS P12 in Base64-encoding (4/5)"
+      ansible.builtin.file:
+        path: "{{ ovpn_crt_chromeos_p12.path }}"
+        state: absent
+      check_mode: false
+      diff: false
+
+    - name: "OpenVPN | Server {{ server_name }} | Cert | Add | ChromeOS P12 in Base64-encoding (5/5)"
+      ansible.builtin.copy:
+        content: "{{ ovpn_crt_chromeos_p12_b64.stdout }}"
+        dest: "{{ client_cert_chromeos }}"
+        owner: "{{ OVPN_HC.user }}"
+        group: "{{ server.group_read }}"
+        mode: 0440
+      no_log: true
+
+  when: >
+    ovpn_crt_renew | bool or
+    not ovpn_crt_chromeos.stat.exists

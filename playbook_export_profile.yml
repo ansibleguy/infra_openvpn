@@ -1,0 +1,32 @@
+---
+
+# ansible-playbook -K -D -i inventory/hosts.yml playbook_export_profile.yml
+
+- name: OpenVPN Export Client Profile
+  hosts: all   # should be limited
+  become: true
+  gather_facts: yes
+
+  vars_prompt:
+    - name: server_name
+      prompt: 'Provide the name of the OpenVPN server instance!'
+      private: false
+
+    - name: client_name
+      prompt: 'Provide the name of the client to export! Valid characters: [a-zA-Z0-9.-]'
+      private: false
+
+    - name: client_id
+      prompt: 'Provide the UUID of the client to export! (Optionally if no name was provided)'
+      private: false
+
+    - name: export_os
+      prompt: "Provide target operating system! One of: 'windows', 'linux', 'macos', 'chromeos'"
+      private: false
+
+  tasks:
+    - name: OpenVPN | Export Profile
+      ansible.builtin.import_role:
+        role: ansibleguy.infra_openvpn
+        tasks_from: export_profile/main.yml
+      run_once: true

@@ -9,19 +9,28 @@ Documentation=https://github.com/ansibleguy/infra_openvpn
 [Service]
 WorkingDirectory={{ path_instance }}%I
 ExecStart=
-ExecStart=/usr/sbin/openvpn --daemon openvpn_%I --cd {{ path_instance }}%I/ --config {{ path_instance }}%I/server.conf --writepid {{ OVPN_HC.path.run }}/{{ OVPN_CONFIG.prefix_instance }}%I.pid
-PIDFile={{ OVPN_HC.path.run }}/{{ OVPN_CONFIG.prefix_instance }}%I.pid
+ExecStart=/usr/sbin/openvpn --daemon openvpn_%i --cd {{ path_instance }}%i/ --config {{ path_instance }}%i/server.conf --writepid {{ OVPN_HC.path.run }}/{{ OVPN_CONFIG.prefix_instance }}%i.pid
+PIDFile={{ OVPN_HC.path.run }}/{{ OVPN_CONFIG.prefix_instance }}%i.pid
 
-CapabilityBoundingSet=CAP_IPC_LOCK CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW CAP_SYS_CHROOT CAP_DAC_OVERRIDE CAP_AUDIT_WRITE
-# todo: add 'CAP_SETGID CAP_SETUID' if totp is used
+CapabilityBoundingSet=CAP_IPC_LOCK CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW CAP_SETGID CAP_SETUID CAP_SYS_CHROOT CAP_DAC_OVERRIDE CAP_AUDIT_WRITE
 
-{% if ansible_distribution_major_version == "10" %}
+{% if OVPN_CONFIG.syslog.enable | bool %}
+{%   if ansible_distribution_major_version == "10" %}
+{%     if OVPN_CONFIG.syslog.stdout | bool %}
 StandardOutput=syslog
+{%     endif %}
+{%     if OVPN_CONFIG.syslog.stderr | bool %}
 StandardError=syslog
-{% else %}
+{%     endif %}
+{%   else %}
+{%     if OVPN_CONFIG.syslog.stdout | bool %}
 StandardOutput=journal
+{%     endif %}
+{%     if OVPN_CONFIG.syslog.stderr | bool %}
 StandardError=journal
-{% endif %}
+{%     endif %}
+{%   endif %}
 SyslogIdentifier=openvpn_%I
+{% endif %}
 
 Environment=PYTHONUNBUFFERED=1

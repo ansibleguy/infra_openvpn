@@ -1,6 +1,6 @@
 ---
 
-# ansible-playbook -K -D -i inventory/hosts.yml playbook.yml
+# ansible-playbook -K -D -i inventory/hosts.yml playbook_server.yml
 
 - name: OpenVPN Client-to-Site
   hosts: all   # should be limited

@@ -18,8 +18,8 @@ compress
 log-append {{ server.log }}
 {% endif %}
 
-{% if server.active_connections | bool %}
-status {{ server_base_dir }}/{{ OVPN_HC.file.active }}
+{% if server.status_file | bool %}
+status {{ OVPN_HC.path.run }}/{{ OVPN_HC.file.status }}
 {% endif %}
 {% if server.management_socket | bool %}
 management {{ OVPN_HC.path.run }}/{{ OVPN_CONFIG.prefixserver }}{{ server_name }}_mgmt.sock unix
@@ -56,12 +56,12 @@ push "dhcp-option DNS {{ server }}"
 
 ### ENCRYPTION ###
 tls-server
-ca {{ server_base_dir }}/{{ OVPN_HC.dir.pki_sub }}/ca.crt
-crl-verify {{ server_base_dir }}/{{ OVPN_HC.dir.pki_sub }}/crl.pem
-dh {{ server_base_dir }}/{{ OVPN_HC.dir.pki_sub }}/dh.pem
+ca {{ server_base_dir }}/{{ OVPN_HC.dir.pki.base }}/{{ OVPN_HC.file.ca }}
+crl-verify {{ server_base_dir }}/{{ OVPN_HC.dir.pki.base }}/{{ OVPN_HC.file.crl }}
+dh {{ server_base_dir }}/{{ OVPN_HC.dir.pki.base }}/{{ OVPN_HC.file.dh }}
 
-cert {{ server_base_dir }}/{{ OVPN_HC.dir.pki_sub }}/issued/{{ OVPN_HC.cert_server }}.crt
-key {{ server_base_dir }}/{{ OVPN_HC.dir.pki_sub }}/private/{{ OVPN_HC.cert_server }}.key
+cert {{ server_base_dir }}/{{ OVPN_HC.dir.pki.public }}/{{ OVPN_HC.cert_server }}.crt
+key {{ server_base_dir }}/{{ OVPN_HC.dir.pki.private }}/{{ OVPN_HC.cert_server }}.key
 
 data-ciphers {{ server.security.cipher.data }}
 tls-cipher {{ server.security.cipher.tls }}
@@ -77,7 +77,7 @@ tls-auth {{ server_base_dir }}/{{ OVPN_HC.file.tls_auth_key }}
 {% endif %}
 
 ## CERTIFICATES
-{% if 'certificate' in server.auth_providers %}
+{% if 'certificate' in server.auth_providers | ensure_list %}
 verify-client-cert require
 remote-cert-eku "TLS Web Client Authentication"
 {% else %}

@@ -10,3 +10,15 @@
 - name: OpenVPN | Processing debian config
   ansible.builtin.import_tasks: debian/main.yml
   when: "ansible_distribution|lower in ['debian', 'ubuntu']"
+
+- name: OpenVPN | Cleaning up temporary password files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ tmp_pwd_file_prefix }}_ca"
+    - "{{ tmp_pwd_file_prefix }}_srv"
+    - "{{ tmp_pwd_file_prefix }}_cli"
+  delegate_to: localhost
+  become: false
+  changed_when: false

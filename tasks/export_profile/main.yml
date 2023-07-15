@@ -2,3 +2,49 @@
 
 # set general vars
 # switch between client-types
+
+- name: OpenVPN | Export Profile | Listing existing server instances
+  ansible.builtin.command: "ls {{ OVPN_CONFIG.path.base }}/{{ OVPN_CONFIG.prefix_instance }}*"
+  check_mode: false
+  changed_when: false
+  register: ovpn_ep_existing_instances
+
+- name: OpenVPN | Export Profile | Validating user-input
+  ansible.builtin.assert:
+    that:
+      - server_name == server_name | sanitize_name
+      - OVPN_CONFIG.prefix_instance + server_name  | sanitize_name in ovpn_ep_existing_instances.stdout_lines
+      - not (client_id | default(none, true) is none and client_name | default(none, true) is none)
+      - client_name | default(none, true) is none or client_name == client_name | sanitize_name
+      - client_id is undefined or client_id | valid_uuid
+      - export_os in OVPN_HC.options.client_os
+
+- name: OpenVPN | Export Profile | Setting server instance path
+  ansible.builtin.set_fact:
+    server_base_dir: "{{ OVPN_CONFIG.path.base }}/{{ OVPN_CONFIG.prefix_instance }}{{ server_name }}"
+    export_path: "{{ export_path | default('/tmp', true) }}"
+    export_file_base: "{{ export_path }}/{{ server_name }}_{{ client_name | default(client_id, true) }}"
+    export_file_profile: "{{ export_file_base }}_profile"
+    export_file_totp: "{{ export_file_base }}_totp.txt"
+
+- name: OpenVPN | Export Profile | Certificate
+  ansible.builtin.import_tasks: export_profile/cert.yml
+  when: "'certificate' in server.auth_providers | ensure_list"
+
+- name: OpenVPN | Export Profile | TOTP
+  ansible.builtin.import_tasks: export_profile/totp.yml
+  vars:
+    client_totp: "{{ server_base_dir }}/{{ OVPN_HC.dir.totp }}/{{ client_name | default('none') }}.{{ OVPN_HC.ext.totp }}"
+  when: "'totp' in server.auth_providers | ensure_list"
+
+- name: OpenVPN | Export Profile | Pulling tls-auth-key
+  ansible.builtin.command: "cat {{ server_base_dir }}/{{ OVPN_HC.file.tls_auth_key }}"
+  changed_when: false
+  check_mode: false
+  no_log: true
+  register: ovpn_ep_cert_cli_pk
+
+- name: OpenVPN | Export Profile | Save
+  ansible.builtin.import_tasks: export_profile/save.yml
+  delegate_to: localhost
+  become: false

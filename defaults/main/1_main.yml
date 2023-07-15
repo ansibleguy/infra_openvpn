@@ -20,6 +20,10 @@ defaults_openvpn:
     lib: '/var/local/lib/openvpn'
 
   prefix_instance: 'server_'
+  syslog:
+    enable: true  # systemd will log to syslog
+    stdout: true
+    stderr: true
 
   backup:
     enable: true  # enable local backup-job
@@ -46,7 +50,7 @@ defaults_instance:
   compress: true
   persistent_ips: true
   management_socket: false
-  active_connections: true
+  status_file: true
   user_multi_connection: true  # allow one user to connect multiple times simultaneously
   additional_config_lines: []
   interface_prefix: 'ovpn'
@@ -58,20 +62,27 @@ defaults_instance:
     dns_servers: []  # translated to 'dhcp-option DNS'
   auth_providers: []  # 'certificate', 'ldap', 'system', 'totp'
   pki:
+    algo: 'ed'  # rsa, ec, ed
+    curve: 'ed25519'
+    key_size: 4096  # 1024, 2048, 4096, 8192
+    digest: 'sha256'  # md5, sha1, sha256, sha224, sha384, sha512
+    pwd:
+      ca: "lookup('password', tmp_pwd_file_prefix + name + '_ca chars=ascii_letters,digits length=' + random_pwd_length)"
+      server: "lookup('password', tmp_pwd_file_prefix + name + '_srv chars=ascii_letters,digits length=' + random_pwd_length)"
+      client: "lookup('password', tmp_pwd_file_prefix + name + '_cli chars=ascii_letters,digits length=' + random_pwd_length)"
     cn:
-      # 'instance_name' will be replaced; whitespace will be replaced by '-'
-      ca: "OpenVPN CA $instance_name"
-      server: "OpenVPN Server $instance_name"
-    org:
-    ou:
-    email:
-    country:
-    state:
-    city:
+      # '$server_name' will be replaced; whitespace will be replaced by '-'
+      ca: "OpenVPN CA $server_name"
+      server: "OpenVPN Server $server_name"
+    org: ''
+    ou: ''
+    email: ''
+    country: ''
+    province: ''  # state
+    city: ''
     runtime_days:
       ca: 7300  # 20 yearss
-      server: 7300  # 20 years
-      client: 1095  # 3 years
+      client: 1095  # 3 years; also used for server-certs
   security:
     # see: https://community.openvpn.net/openvpn/wiki/CipherNegotiation
     tls_min_version: '1.2'

@@ -1,0 +1,29 @@
+---
+
+- name: OpenVPN | Export Profile | Save | TOTP
+  ansible.builtin.copy:
+    content: "{{ ovpn_ep_totp_key.stdout }}"
+    dest: "{{ export_file_totp }}"
+    mode: 0600
+  no_log: true
+  when: "'totp' in server.auth_providers | ensure_list"
+
+- name: OpenVPN | Export Profile | Save | Profile
+  ansible.builtin.template:
+    src: "templates/localhost/profile/{{ export_os }}.conf.j2"
+    dest: "{{ export_file_profile }}.ovpn"
+    mode: 0600
+  no_log: true
+  when: export_os in ['windows', 'linux', 'macos']
+
+- name: OpenVPN | Export Profile | Save | Profile for ChromeOS
+  ansible.builtin.template:
+    src: 'templates/localhost/profile/chromeos.onc.j2'
+    dest: "{{ export_file_profile }}.onc"
+    mode: 0600
+  no_log: true
+  when: export_os == 'chromeos'
+
+- name: OpenVPN | Export Profile | Save | Notify
+  ansible.builtin.pause:
+    prompt: "Profile successfully exported to: '{{ export_file_base }}_*'"

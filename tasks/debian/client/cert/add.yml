@@ -1,3 +1,9 @@
 ---
 
 # create new client certificate
+
+- name: "OpenVPN | Server {{ server_name }} | Cert | ChromeOS Support"
+  ansible.builtin.include_tasks: debian/client/cert/add_chromeos.yml
+  vars:
+    client_cert_chromeos: "{{ server_base_dir }}/{{ OVPN_HC.dir.pki.private }}/{{ client_cert }}.{{ OVPN_HC.ext.p12_chromeos }}"
+  when: "'chromeos' in server.support.clients"

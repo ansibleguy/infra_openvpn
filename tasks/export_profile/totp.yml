@@ -1,0 +1,21 @@
+---
+
+- name: OpenVPN | Export Profile | TOTP | Unable to locate key
+  ansible.builtin.fail:
+    msg: "You need to supply the 'client_name' to locate an existing TOTP key!"
+  when: client_name | default(none, true) is none
+
+- name: OpenVPN | Export Profile | TOTP | Checking if key exists
+  ansible.builtin.stat:
+    path: "{{ client_totp }}"
+  register: ovpn_ep_totp_key
+
+- name: OpenVPN | Export Profile | TOTP | Adding TOTP Token
+  ansible.builtin.import_tasks: debian/client/totp/add.yml
+  when: not ovpn_ep_totp_key.stat.exists
+
+- name: OpenVPN | Export Profile | TOTP | Pulling TOTP key
+  ansible.builtin.command: "cat {{ client_totp }}"
+  check_mode: false
+  no_log: true
+  register: ovpn_ep_totp_key

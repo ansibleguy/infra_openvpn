@@ -9,7 +9,7 @@
     - server.state != 'absent'
     - server.enabled | bool
   vars:
-    server_name: "{{ instance_item.key }}"
+    server_name: "{{ instance_item.key | sanitize_name }}"
     server: "{{ instance_item.value }}"
     server_base_dir: "{{ OVPN_CONFIG.path.base }}/{{ OVPN_CONFIG.prefix_instance }}{{ server_name }}"
   loop_control:
@@ -22,7 +22,7 @@
     - server.state != 'absent'
     - server.enabled | bool
   vars:
-    server_name: "{{ instance_item.key }}"
+    server_name: "{{ instance_item.key | sanitize_name }}"
     server: "{{ instance_item.value }}"
   loop_control:
     loop_var: instance_item
@@ -34,7 +34,7 @@
     - server.state != 'absent'
     - not server.enabled | bool
   vars:
-    server_name: "{{ instance_item.key }}"
+    server_name: "{{ instance_item.key | sanitize_name }}"
     server: "{{ instance_item.value }}"
   loop_control:
     loop_var: instance_item
@@ -44,7 +44,7 @@
   ansible.builtin.include_tasks: debian/instance/remove.yml
   when: server.state == 'absent'
   vars:
-    server_name: "{{ instance_item.key }}"
+    server_name: "{{ instance_item.key | sanitize_name }}"
     server: "{{ instance_item.value }}"
     server_base_dir: "{{ OVPN_CONFIG.path.base }}/{{ OVPN_CONFIG.prefix_instance }}{{ server_name }}"
   loop_control:
