@@ -25,25 +25,37 @@
     name: ansibleguy.infra_pki
   vars:
     pki:
+      purge: false
+      save_passwords: true
+      manage:
+        webserver: false
+
       crl_distribution:
         enable: false
 
+      backup:
+        enable: false  # covered by openvpn backup-job
+
       vars:
-        ca_expire: "{{ server.pki.runtime_days.ca }}"
-        cert_expire: "{{ server.pki.runtime_days.ca }}"  # sub-ca
+        algo: "{{ server.pki.algo }}"
+        curve: "{{ server.pki.curve }}"
+        digest: "{{ server.pki.digest }}"
         req_org: "{{ server.pki.org }}"
         req_ou: "{{ server.pki.ou }}"
         req_email: "{{ server.pki.email }}"
         req_country: "{{ server.pki.country }}"
         req_province: "{{ server.pki.province }}"
-        key_size: 8192
 
       instances:
-        openvpn:
-          path_base: "{{ server_base_dir }}/{{ OVPN_HC.dir.pki.root }}"
+        pki:
+          path_base: "{{ server_base_dir }}"
           ca_cn: "OpenVPN-Root-CA-{{ server_name }}"
           pwd_ca: "{{ server.pki.pwd.ca }}"
           group_read: "{{ server.group_read }}"
+
+          vars:
+            ca_expire: "{{ server.pki.runtime_days.ca }}"
+            cert_expire: "{{ server.pki.runtime_days.ca }}"  # sub-ca
 
           sub_cas:
             openvpn:
@@ -53,5 +65,9 @@
                 ca_expire: "{{ server.pki.runtime_days.ca }}"
                 cert_expire: "{{ server.pki.runtime_days.client }}"
                 key_size: "{{ server.pki.key_size }}"
-                digest: "{{ server.pki.digest }}"
+              cert_no_pass: false  # also create encrypted keys
+              export:
+                unencrypted: true
+                chain: true
+                pkcs12: true
   when: not ovpn_pki_init.stat.exists

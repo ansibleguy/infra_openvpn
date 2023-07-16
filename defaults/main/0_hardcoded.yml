@@ -12,9 +12,9 @@ OVPN_HC:
     profile: 'profile_templates'
     pki:
       root: 'pki'
-      base: 'pki/openvpn/subca_openvpn'
-      public: 'pki/openvpn/subca_openvpn/issued'
-      private: 'pki/openvpn/subca_openvpn/private'
+      base: 'pki/subca_openvpn'
+      public: 'pki/subca_openvpn/issued'
+      private: 'pki/subca_openvpn/private'
     totp: 'totp'
 
   path:
@@ -32,8 +32,8 @@ OVPN_HC:
       srv: 'pwd_srv.txt'
       cli: 'pwd_cli.txt'
   ext:
-    p12_chromeos: 'p12.nopw.b64'
-    key: 'nopw.key'
+    p12_chromeos: 'p12.unencrypted.b64'
+    key: 'unencrypted.key'
     crt: 'crt'
     totp: 'key'
   options:
