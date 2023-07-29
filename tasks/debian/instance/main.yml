@@ -1,8 +1,5 @@
 ---
 
-- name: OpenVPN | Initialize
-  ansible.builtin.import_tasks: debian/instance/init.yml
-
 - name: OpenVPN | Add server instances
   ansible.builtin.include_tasks: debian/instance/add.yml
   when:
@@ -10,11 +7,16 @@
     - server.enabled | bool
   vars:
     server_name: "{{ instance_item.key | sanitize_name }}"
-    server: "{{ instance_item.value }}"
+    server: "{{ defaults_instance | combine(instance_item.value, recursive=true) }}"
     server_base_dir: "{{ OVPN_CONFIG.path.base }}/{{ OVPN_CONFIG.prefix_instance }}{{ server_name }}"
   loop_control:
     loop_var: instance_item
   with_dict: "{{ OVPN_CONFIG.instances }}"
+  no_log: true  # less output
+  tags: [servers, instances, add]
+  args:
+    apply:
+      tags: [servers, instances, add]
 
 - name: OpenVPN | Enable server instances
   ansible.builtin.include_tasks: debian/instance/enable.yml
@@ -23,10 +25,15 @@
     - server.enabled | bool
   vars:
     server_name: "{{ instance_item.key | sanitize_name }}"
-    server: "{{ instance_item.value }}"
+    server: "{{ defaults_instance | combine(instance_item.value, recursive=true) }}"
   loop_control:
     loop_var: instance_item
   with_dict: "{{ OVPN_CONFIG.instances }}"
+  no_log: true  # less output
+  tags: [servers, instances, enable]
+  args:
+    apply:
+      tags: [servers, instances, enable]
 
 - name: OpenVPN | Disable server instances
   ansible.builtin.include_tasks: debian/instance/disable.yml
@@ -35,18 +42,28 @@
     - not server.enabled | bool
   vars:
     server_name: "{{ instance_item.key | sanitize_name }}"
-    server: "{{ instance_item.value }}"
+    server: "{{ defaults_instance | combine(instance_item.value, recursive=true) }}"
   loop_control:
     loop_var: instance_item
   with_dict: "{{ OVPN_CONFIG.instances }}"
+  no_log: true  # less output
+  tags: [servers, instances, disable]
+  args:
+    apply:
+      tags: [servers, instances, disable]
 
 - name: OpenVPN | Remove server instances
   ansible.builtin.include_tasks: debian/instance/remove.yml
   when: server.state == 'absent'
   vars:
     server_name: "{{ instance_item.key | sanitize_name }}"
-    server: "{{ instance_item.value }}"
+    server: "{{ defaults_instance | combine(instance_item.value, recursive=true) }}"
     server_base_dir: "{{ OVPN_CONFIG.path.base }}/{{ OVPN_CONFIG.prefix_instance }}{{ server_name }}"
   loop_control:
     loop_var: instance_item
   with_dict: "{{ OVPN_CONFIG.instances }}"
+  no_log: true  # less output
+  tags: [servers, instances, remove]
+  args:
+    apply:
+      tags: [servers, instances, remove]

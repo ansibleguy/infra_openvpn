@@ -34,25 +34,34 @@
     state: present
   changed_when: false
 
-- name: OpenVPN | Setup | Adding directories
+- name: OpenVPN | Setup | Adding directories \#1
   ansible.builtin.file:
     state: directory
     path: "{{ item }}"
     owner: "{{ OVPN_HC.user }}"
-    group: "{{ server.group_read }}"
-    mode: 750
+    group: "{{ OVPN_HC.user }}"
+    mode: 0755
   loop:
     - "{{ OVPN_CONFIG.path.base }}"
-    - "{{ OVPN_CONFIG.path.lib }}"
     - "{{ OVPN_HC.path.run }}"
 
 - name: OpenVPN | Setup | Adding directories \#2
   ansible.builtin.file:
     state: directory
     path: "{{ item }}"
+    owner: "{{ OVPN_HC.user }}"
+    group: "{{ OVPN_HC.user }}"
+    mode: 0750
+  loop:
+    - "{{ OVPN_CONFIG.path.lib }}"
+
+- name: OpenVPN | Setup | Adding directories \#3
+  ansible.builtin.file:
+    state: directory
+    path: "{{ item }}"
     owner: 'root'
     group: 'root'
-    mode: 755
+    mode: 0755
   loop:
     - "/etc/systemd/system/openvpn@.service.d"
 

@@ -2,13 +2,14 @@
 
 - name: Prepare
   hosts: all
+  gather_facts: false
   tasks:
     - name: Installing troubleshooting utils
-      apt:
+      ansible.builtin.apt:
         name: ['less', 'nano', 'net-tools', 'dnsutils', 'iproute2']
         state: present
 
-    - name: Installing Role dependencies
-      apt:
-        name: ['kmod']
+    - name: Installing dependencies
+      ansible.builtin.apt:
+        name: ['gpg']
         state: present

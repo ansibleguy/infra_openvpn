@@ -10,8 +10,9 @@
 - name: "OpenVPN | Server {{ server_name }} | Add | Validating config"
   ansible.builtin.assert:
     that:
-      - server.ips | ensure_list > 0
-      - server.auth_providers | ensure_list > 0
+      - server.ips | ensure_list | length > 0
+      - server.network | is_ipaddress_cidr
+      - server.auth_providers | ensure_list | length > 0
       - server.auth_providers | ensure_list | length == server.auth_providers | ensure_list | intersect(OVPN_HC.options.auth_providers) | length  # all providers are supported
       - server.proto in OVPN_HC.options.proto
       - server.port | int > 0
@@ -19,18 +20,21 @@
       - server.log_level | int >= 0
       - server.log_level | int < 12
       - "' ' in server.keepalive"
+  tags: always
 
-- name: "OpenVPN | Server {{ server_name }} | Add | Directories"
-  ansible.builtin.file:
-    state: directory
-    path: "{{ item }}"
-    owner: "{{ OVPN_HC.user }}"
-    group: "{{ server.group_read }}"
-    mode: 750
-  loop:
-    - "{{ server_base_dir }}"
-    - "{{ server_base_dir }}/{{ OVPN_HC.dir.profile }}"
-    - "{{ server_base_dir }}/{{ OVPN_HC.dir.pki.base }}"
+- name: "OpenVPN | Server {{ server_name }} | Add | Inform user"
+  ansible.builtin.pause:
+    prompt: "No DNS-endpoints (server.dns) were supplied for the server '{{ server_name }}'.
+    This is highly recommended if you have multiple clients!"
+  when:
+    - not no_prompts | bool
+    - server.dns | ensure_list | length == 0
+
+- name: "OpenVPN | Server {{ server_name }} | Add | Initialize"
+  ansible.builtin.include_tasks: debian/instance/init.yml
+  args:
+    apply:
+      tags: [servers, instances, add]
 
 - name: "OpenVPN | Server {{ server_name }} | Add | Config"
   ansible.builtin.template:
@@ -44,6 +48,9 @@
 - name: "OpenVPN | Server {{ server_name }} | Add | PKI"
   ansible.builtin.include_tasks: debian/instance/pki.yml
   when: "'certificate' in server.auth_providers | ensure_list"
+  args:
+    apply:
+      tags: [servers, instances, add]
 
 # todo: ip-wrapper
 # todo: nat & nftables option (with simplified ruleset definition)

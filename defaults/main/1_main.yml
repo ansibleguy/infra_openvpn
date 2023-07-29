@@ -18,6 +18,7 @@ defaults_openvpn:
   path:
     base: '/etc/openvpn'
     lib: '/var/local/lib/openvpn'
+    backup: '/var/backups/openvpn'
 
   prefix_instance: 'server_'
   syslog:
@@ -33,12 +34,14 @@ defaults_openvpn:
     #   https://wiki.archlinux.org/title/Systemd/Timers
     #   https://silentlad.com/systemd-timers-oncalendar-(cron)-format-explained
 
+  interface_prefix: 'ovpn'
   instances: {}
 
 defaults_instance:
   state: 'present'  # or 'absent'
   enabled: true  # keep instance, but stop & disable its service
   ips: []
+  dns: []  # dns-endpoints for clients to connect to
   proto: 'udp'  # or 'tcp'
   port:
   support:
@@ -53,7 +56,6 @@ defaults_instance:
   status_file: true
   user_multi_connection: true  # allow one user to connect multiple times simultaneously
   additional_config_lines: []
-  interface_prefix: 'ovpn'
   log: 'syslog'  # or file
   mtu: 1420
   push:
@@ -89,9 +91,9 @@ defaults_instance:
     cipher:
       data: 'AES-256-GCM:AES-128-GCM:AES-256-CBC'
       # directly passed to openssl - see: https://wiki.openssl.org/index.php/TLS1.3#Ciphersuites
-      tls: 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:\
+      tls: "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:\
       TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:TLS_DHE_RSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:\
       TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:\
-      TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:TLS_DHE_RSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256'
+      TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:TLS_DHE_RSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"
     hash_algo: 'SHA512'
     tls_crypt: true  # NO SUPPORT FOR CHROMEOS!

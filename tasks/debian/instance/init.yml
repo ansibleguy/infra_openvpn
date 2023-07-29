@@ -4,6 +4,22 @@
 # add system user
 # add privileges if needed
 
+- name: "OpenVPN | Server {{ server_name }} | Adding read-only group"
+  ansible.builtin.group:
+    name: "{{ server.group_read }}"
+
+- name: "OpenVPN | Server {{ server_name }} | Adding Directories"
+  ansible.builtin.file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ OVPN_HC.user }}"
+    group: "{{ server.group_read }}"
+    mode: 0750
+  loop:
+    - "{{ server_base_dir }}"
+    - "{{ server_base_dir }}/{{ OVPN_HC.dir.profile }}"
+    - "{{ server_base_dir }}/{{ OVPN_HC.dir.pki.base }}"
+
 - name: "OpenVPN | Server {{ server_name }} | Touching files"
   ansible.builtin.file:
     path: "{{ item }}"
@@ -13,5 +29,5 @@
     mode: 0640
   diff: false
   loop:
-    - "{{ OVPN_HC.path.run }}/{{ OVPN_HC.file.status }}"
+    - "{{ OVPN_HC.path.run }}/{{ server_name }}_{{ OVPN_HC.file.status }}"
     - "{{ server_base_dir }}/{{ OVPN_HC.file.persist }}"

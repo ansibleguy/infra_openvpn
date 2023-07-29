@@ -2,7 +2,20 @@
 
 - name: Converge
   hosts: grp_targets
-  #  vars:
+  module_defaults:
+    ansible.builtin.setup:
+      gather_subset: ['distribution']
+  gather_facts: true
+  vars:
+    no_prompts: true
+    openvpn:
+      instances:
+        test1:
+          ips: '192.168.16.2'
+          network: '10.1.2.1/28'
+          auth_providers: ['certificate', 'system']
+          port: 1194
+          dns: 'ovpn.test.ansibleguy.net'
 
   roles:
     - ansibleguy.infra_openvpn

@@ -2,6 +2,8 @@ from uuid import uuid4
 from re import sub as regex_replace
 from re import match as regex_match
 
+from ipaddress import NetmaskValueError, AddressValueError, IPv4Network, IPv4Address, IPv6Address, IPv6Network
+
 
 class FilterModule(object):
     def filters(self):
@@ -11,6 +13,7 @@ class FilterModule(object):
             "valid_uuid": self.valid_uuid,
             "get_uuid": self.get_uuid,
             "sanitize_name": self.sanitize_name,
+            "is_ipaddress_cidr": self.is_ipaddress_cidr,
         }
 
     @staticmethod
@@ -20,6 +23,28 @@ class FilterModule(object):
             return data
 
         return [data]
+
+    @staticmethod
+    def is_ipaddress_cidr(data: str) -> bool:
+        network = data
+        address = data.split('/', 1)[0]
+
+        if not isinstance(data, str) or data.find('/') == -1:
+            return False
+
+        try:
+            IPv4Network(network, strict=False)
+            IPv4Address(address)
+            return True
+
+        except (NetmaskValueError, AddressValueError):
+            try:
+                IPv6Network(network, strict=False)
+                IPv6Address(address)
+                return True
+
+            except (NetmaskValueError, AddressValueError):
+                return False
 
     @staticmethod
     def safe_int_name(key: str) -> str:

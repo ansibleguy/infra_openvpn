@@ -19,10 +19,10 @@ log-append {{ server.log }}
 {% endif %}
 
 {% if server.status_file | bool %}
-status {{ OVPN_HC.path.run }}/{{ OVPN_HC.file.status }}
+status {{ OVPN_HC.path.run }}/{{ server_name }}_{{ OVPN_HC.file.status }}
 {% endif %}
 {% if server.management_socket | bool %}
-management {{ OVPN_HC.path.run }}/{{ OVPN_CONFIG.prefixserver }}{{ server_name }}_mgmt.sock unix
+management {{ OVPN_HC.path.run }}/{{ server_name }}_mgmt.sock unix
 {% endif %}
 
 ### NETWORK ###
@@ -66,7 +66,7 @@ key {{ server_base_dir }}/{{ OVPN_HC.dir.pki.private }}/{{ OVPN_HC.cert_server }
 data-ciphers {{ server.security.cipher.data }}
 tls-cipher {{ server.security.cipher.tls }}
 tls-version-min {{ server.security.tls_min_version }}
-auth {{ server.security.cipher.hash_algo }}
+auth {{ server.security.hash_algo }}
 
 ### AUTHENTICATION ###
 ## TLS-AUTH

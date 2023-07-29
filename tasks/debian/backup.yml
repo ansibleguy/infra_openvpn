@@ -12,6 +12,15 @@
     - 'service'
     - 'timer'
 
+- name: OpenVPN | Backup | Adding directory
+  ansible.builtin.file:
+    state: directory
+    path: "{{ OVPN_CONFIG.path.backup }}"
+    owner: 'root'
+    group: 'root'
+    mode: 0750
+  when: OVPN_CONFIG.backup.enable | bool
+
 - name: OpenVPN | Backup | Enabling & Starting timer
   ansible.builtin.systemd:
     daemon_reload: true
