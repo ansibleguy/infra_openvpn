@@ -1,0 +1,109 @@
+---
+
+- name: "{{ task_prefix }} | Loading passwords"
+  block:
+    - name: "{{ task_prefix }} | Retrieving CA-password from file"
+      ansible.builtin.command: "cat {{ server_base_dir }}/{{ OVPN_HC.dir.pki.root }}/{{ OVPN_HC.file.pwd.ca }}"
+      register: server_pwd_ca_txt
+      ignore_errors: true
+      changed_when: false
+      no_log: true
+
+    - name: "{{ task_prefix }} | Setting CA-password to saved one"
+      ansible.builtin.set_fact:
+        server_pwd_ca: "{{ server_pwd_ca_txt.stdout }}"
+      no_log: true
+      when: not server_pwd_ca_txt.failed
+
+    - name: "{{ task_prefix }} | Setting CA-password to provided one"
+      ansible.builtin.set_fact:
+        server_pwd_ca: "{{ server.pki.pwd.ca }}"
+      no_log: true
+      when: server_pwd_ca_txt.failed
+
+    - name: "{{ task_prefix }} | Retrieving Certificate-password from file"
+      ansible.builtin.command: "cat {{ server_base_dir }}/{{ OVPN_HC.dir.pki.root }}/{{ OVPN_HC.file.pwd.cert }}"
+      register: server_pwd_cert_txt
+      ignore_errors: true
+      changed_when: false
+      no_log: true
+
+    - name: "{{ task_prefix }} | Setting Certificate-password to saved one"
+      ansible.builtin.set_fact:
+        server_pwd_cert: "{{ server_pwd_cert_txt.stdout }}"
+      no_log: true
+      when: not server_pwd_cert_txt.failed
+
+    - name: "{{ task_prefix }} | Setting Certificate-password to provided one"
+      ansible.builtin.set_fact:
+        server_pwd_cert: "{{ server.pki.pwd.cert }}"
+      no_log: true
+      when: server_pwd_cert_txt.failed
+
+- name: "{{ task_prefix }} | Setting up PKI vars"
+  ansible.builtin.set_fact:
+    pki_name: 'pki'
+    pki_name_subca: 'openvpn'
+    pki:
+      purge: false
+      save_passwords: true
+      manage:
+        webserver: false  # crl only used locally
+
+      crl_distribution:
+        enable: false  # crl only used locally
+
+      backup:
+        enable: false  # covered by openvpn backup-job
+
+      vars:
+        algo: "{{ server.pki.algo }}"
+        curve: "{{ server.pki.curve }}"
+        digest: "{{ server.pki.digest }}"
+        req_org: "{{ server.pki.org }}"
+        req_ou: "{{ server.pki.ou }}"
+        req_email: "{{ server.pki.email }}"
+        req_country: "{{ server.pki.country }}"
+        req_province: "{{ server.pki.province }}"
+        req_city: "{{ server.pki.city }}"
+
+      instances:
+        pki:
+          path_base: "{{ server_base_dir }}"
+          ca_cn: "{{ server.pki.cn.root_ca | replace(' ', '-') | replace('$server_name', server_name | capitalize) }}"
+          pwd_ca: "{{ server_pwd_ca }}"
+          group_read: "{{ server.group_read }}"
+
+          vars:
+            ca_expire: "{{ server.pki.runtime_days.ca }}"
+            cert_expire: "{{ server.pki.runtime_days.ca }}"  # sub-ca
+
+          sub_cas:
+            openvpn:
+              pwd_ca: "{{ server_pwd_ca }}"
+              pwd_cert: "{{ server_pwd_cert }}"
+              ca_cn: "{{ server.pki.cn.ca | replace(' ', '-') | replace('$server_name', server_name | capitalize) }}"
+              vars:
+                ca_expire: "{{ server.pki.runtime_days.ca }}"
+                cert_expire: "{{ server.pki.runtime_days.client }}"
+                key_size: "{{ server.pki.key_size }}"
+              cert_no_pass: false  # also create encrypted keys
+              export:
+                unencrypted: true
+                chain: true
+                pkcs12: true
+  no_log: true  # passwords
+
+- name: "{{ task_prefix }} | Initialize"
+  ansible.builtin.include_tasks: debian/instance/pki/init.yml
+  args:
+    apply:
+      tags: [servers, instances, add]
+
+- name: "{{ task_prefix }} | Server Certificate"
+  ansible.builtin.include_tasks: debian/instance/pki/server_cert.yml
+  vars:
+    task_prefix: "OpenVPN | Server '{{ server_name }}' | Certificate"
+  args:
+    apply:
+      tags: [servers, instances, add]

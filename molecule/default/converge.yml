@@ -8,14 +8,24 @@
   gather_facts: true
   vars:
     no_prompts: true
+    auto_restart: true
     openvpn:
       instances:
         test1:
           ips: '192.168.16.2'
-          network: '10.1.2.1/28'
-          auth_providers: ['certificate', 'system']
+          network: '10.1.2.0/28'
+          auth:
+            providers: ['certificate', 'system']
           port: 1194
           dns: 'ovpn.test.ansibleguy.net'
+
+          pki:
+            country: 'AT'
+            email: 'ovpn@test.ansibleguy.net'
+            org: 'AnsibleGuy Test'
+            ou: 'TEST'
+            province: 'TestProvince'
+            city: 'Graz'
 
   roles:
     - ansibleguy.infra_openvpn

@@ -6,7 +6,7 @@
     dest: "{{ export_file_totp }}"
     mode: 0600
   no_log: true
-  when: "'totp' in server.auth_providers | ensure_list"
+  when: "'totp' in server.auth.providers | ensure_list"
 
 - name: OpenVPN | Export Profile | Save | Profile
   ansible.builtin.template:

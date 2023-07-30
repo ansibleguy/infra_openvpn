@@ -30,7 +30,7 @@ StandardOutput=journal
 StandardError=journal
 {%     endif %}
 {%   endif %}
-SyslogIdentifier=openvpn_%I
+SyslogIdentifier={{ OVPN_CONFIG.syslog.identifier }}
 {% endif %}
 
 Environment=PYTHONUNBUFFERED=1

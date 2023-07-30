@@ -1,0 +1,28 @@
+---
+
+# todo: option for renewal
+
+- name: "{{ task_prefix }} | Setting up Certificate vars"
+  ansible.builtin.set_fact:
+    pki_subca_pwd: "{{ server_pwd_ca }}"
+    pki_cert_action: 'create'
+    pki_cert_type: 'server'
+    pki_cert_name: 'openvpn'
+    pki_cert_cnf:
+      cn: "{{ server.pki.cn.server | replace(' ', '-') | replace('$server_name', server_name | capitalize) }}"
+      pwd: "{{ server_pwd_cert }}"
+      export:
+        unencrypted: true
+        chain: true
+        pkcs12: true
+      san:
+        ip: "{{ server.ips }}"
+        dns: "{{ server.dns }}"
+
+- name: "{{ task_prefix }} | Server certificate"
+  ansible.builtin.include_role:
+    name: ansibleguy.infra_pki
+    tasks_from: single_cert.yml
+  args:
+    apply:
+      tags: [always]

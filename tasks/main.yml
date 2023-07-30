@@ -5,21 +5,28 @@
     that:
       - openvpn is defined
       - openvpn.instances is defined
-      - openvpn.instances | length > 0
+      - OVPN_CONFIG.instances | is_dict
+      - OVPN_CONFIG.instances | length > 0
   tags: always
 
 - name: OpenVPN | Processing debian config
   ansible.builtin.import_tasks: debian/main.yml
   when: "ansible_distribution|lower in ['debian', 'ubuntu']"
 
-- name: OpenVPN | Cleaning up temporary password files
+- name: OpenVPN | Cleaning up temporary password files \#1
+  ansible.builtin.shell: "ls {{ tmp_pwd_file_prefix }}*"
+  args:
+    executable: '/bin/bash'
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  register: ovpn_pwd_files
+
+- name: OpenVPN | Cleaning up temporary password files \#2
   ansible.builtin.file:
     path: "{{ item }}"
     state: absent
-  loop:
-    - "{{ tmp_pwd_file_prefix }}_ca"
-    - "{{ tmp_pwd_file_prefix }}_srv"
-    - "{{ tmp_pwd_file_prefix }}_cli"
+  loop: "{{ ovpn_pwd_files.stdout_lines }}"
   delegate_to: localhost
   become: false
   changed_when: false

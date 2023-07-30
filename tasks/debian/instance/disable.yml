@@ -1,11 +1,21 @@
 ---
 
-- name: "OpenVPN | Server {{ server_name }} | Disabling service"
+- name: "{{ task_prefix }} | Disabling service"
   ansible.builtin.systemd:
-    name: 'openvpn@{{ server_name }}.service'
+    name: "openvpn@{{ server_name }}.service"
     enabled: false
+  register: ovpn_server_disable
+  failed_when:
+    - ovpn_server_disable.failed
+    - "'does not exist' not in ovpn_server_disable.msg"
+    - "'Could not find' not in ovpn_server_disable.msg"
 
-- name: "OpenVPN | Server {{ server_name }} | Stopping service"
+- name: "{{ task_prefix }} | Stopping service"
   ansible.builtin.systemd:
-    name: 'openvpn@{{ server_name }}.service'
+    name: "openvpn@{{ server_name }}.service"
     state: stopped
+  register: ovpn_server_stop
+  failed_when:
+    - ovpn_server_stop.failed
+    - "'does not exist' not in ovpn_server_stop.msg"
+    - "'Could not find' not in ovpn_server_stop.msg"

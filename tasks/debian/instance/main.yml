@@ -9,10 +9,11 @@
     server_name: "{{ instance_item.key | sanitize_name }}"
     server: "{{ defaults_instance | combine(instance_item.value, recursive=true) }}"
     server_base_dir: "{{ OVPN_CONFIG.path.base }}/{{ OVPN_CONFIG.prefix_instance }}{{ server_name }}"
+    task_prefix: "OpenVPN | Server '{{ server_name }}' | Add"
   loop_control:
     loop_var: instance_item
   with_dict: "{{ OVPN_CONFIG.instances }}"
-  no_log: true  # less output
+  no_log: true  # less output & passwords
   tags: [servers, instances, add]
   args:
     apply:
@@ -26,10 +27,11 @@
   vars:
     server_name: "{{ instance_item.key | sanitize_name }}"
     server: "{{ defaults_instance | combine(instance_item.value, recursive=true) }}"
+    task_prefix: "OpenVPN | Server '{{ server_name }}' | Enable"
   loop_control:
     loop_var: instance_item
   with_dict: "{{ OVPN_CONFIG.instances }}"
-  no_log: true  # less output
+  no_log: true  # less output & passwords
   tags: [servers, instances, enable]
   args:
     apply:
@@ -43,10 +45,11 @@
   vars:
     server_name: "{{ instance_item.key | sanitize_name }}"
     server: "{{ defaults_instance | combine(instance_item.value, recursive=true) }}"
+    task_prefix: "OpenVPN | Server '{{ server_name }}' | Disable"
   loop_control:
     loop_var: instance_item
   with_dict: "{{ OVPN_CONFIG.instances }}"
-  no_log: true  # less output
+  no_log: true  # less output & passwords
   tags: [servers, instances, disable]
   args:
     apply:
@@ -59,10 +62,11 @@
     server_name: "{{ instance_item.key | sanitize_name }}"
     server: "{{ defaults_instance | combine(instance_item.value, recursive=true) }}"
     server_base_dir: "{{ OVPN_CONFIG.path.base }}/{{ OVPN_CONFIG.prefix_instance }}{{ server_name }}"
+    task_prefix: "OpenVPN | Server '{{ server_name }}' | Remove"
   loop_control:
     loop_var: instance_item
   with_dict: "{{ OVPN_CONFIG.instances }}"
-  no_log: true  # less output
+  no_log: true  # less output & passwords
   tags: [servers, instances, remove]
   args:
     apply:

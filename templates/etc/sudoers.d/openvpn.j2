@@ -1,0 +1,30 @@
+# {{ ansible_managed }}
+# source: https://community.openvpn.net/openvpn/wiki/UnprivilegedUser#SecureWrapper
+# compare to sources:
+#   cat src/openvpn/networking_iproute2.c | grep ', iproute_path'
+
+Cmnd_Alias OPENVPN_IP = \
+  /sbin/ip link add {{ OVPN_CONFIG.interface_prefix }}*, \
+  /sbin/ip link del {{ OVPN_CONFIG.interface_prefix }}*, \
+  /sbin/ip link set dev {{ OVPN_CONFIG.interface_prefix }}*, \
+  /sbin/ip addr add dev {{ OVPN_CONFIG.interface_prefix }}*, \
+  /sbin/ip addr del dev {{ OVPN_CONFIG.interface_prefix }}*, \
+  /sbin/ip route add *, \
+  /sbin/ip route del *, \
+  /sbin/ip -6 addr add *, \
+  /sbin/ip -6 addr del *, \
+  /sbin/ip -6 route add *, \
+  /sbin/ip -6 route del *, \
+  /usr/sbin/ip link add {{ OVPN_CONFIG.interface_prefix }}*, \
+  /usr/sbin/ip link del {{ OVPN_CONFIG.interface_prefix }}*, \
+  /usr/sbin/ip link set dev {{ OVPN_CONFIG.interface_prefix }}*, \
+  /usr/sbin/ip addr add dev {{ OVPN_CONFIG.interface_prefix }}*, \
+  /usr/sbin/ip addr del dev {{ OVPN_CONFIG.interface_prefix }}*, \
+  /usr/sbin/ip route add *, \
+  /usr/sbin/ip route del *, \
+  /usr/sbin/ip -6 addr add *, \
+  /usr/sbin/ip -6 addr del *, \
+  /usr/sbin/ip -6 route add *, \
+  /usr/sbin/ip -6 route del *
+
+{{ OVPN_HC.user }} ALL=(ALL) NOPASSWD: OPENVPN_IP

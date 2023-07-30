@@ -4,11 +4,11 @@
 # add system user
 # add privileges if needed
 
-- name: "OpenVPN | Server {{ server_name }} | Adding read-only group"
+- name: "{{ task_prefix }} | Adding read-only group"
   ansible.builtin.group:
     name: "{{ server.group_read }}"
 
-- name: "OpenVPN | Server {{ server_name }} | Adding Directories"
+- name: "{{ task_prefix }} | Adding Directories"
   ansible.builtin.file:
     state: directory
     path: "{{ item }}"
@@ -18,16 +18,33 @@
   loop:
     - "{{ server_base_dir }}"
     - "{{ server_base_dir }}/{{ OVPN_HC.dir.profile }}"
-    - "{{ server_base_dir }}/{{ OVPN_HC.dir.pki.base }}"
+    - "{{ server_base_dir }}/{{ OVPN_HC.dir.pki.root }}"
 
-- name: "OpenVPN | Server {{ server_name }} | Touching files"
+- name: "{{ task_prefix }} | Touching files"
   ansible.builtin.file:
     path: "{{ item }}"
     state: touch
     owner: "{{ OVPN_HC.user }}"
     group: "{{ server.group_read }}"
     mode: 0640
+    modification_time: preserve
+    access_time: preserve
   diff: false
   loop:
     - "{{ OVPN_HC.path.run }}/{{ server_name }}_{{ OVPN_HC.file.status }}"
     - "{{ server_base_dir }}/{{ OVPN_HC.file.persist }}"
+
+- name: "{{ task_prefix }} | Creating TLS-Auth key"
+  ansible.builtin.command: "openvpn --genkey --secret {{ server_base_dir }}/{{ OVPN_HC.file.tls_auth_key }}"
+  args:
+    creates: "{{ server_base_dir }}/{{ OVPN_HC.file.tls_auth_key }}"
+
+- name: "{{ task_prefix }} | Copying auth-script"
+  ansible.builtin.template:
+    src: "templates/etc/openvpn/instance/{{ item }}.j2"
+    dest: "{{ server_base_dir }}/{{ item }}"
+    owner: 'root'
+    group: "{{ OVPN_HC.user }}"
+    mode: 0750
+  loop:
+    - 'auth.py'

@@ -69,7 +69,7 @@
   when: export_os != 'chromeos'
 
 - name: OpenVPN | Export Profile | Certs | Pulling client private-key
-  ansible.builtin.command: "cat {{ server_base_dir }}/{{ OVPN_HC.dir.pki.private }}/{{ client_cert }}.{{ OVPN_HC.ext.key }}"
+  ansible.builtin.command: "cat {{ server_base_dir }}/{{ OVPN_HC.dir.pki.private }}/{{ client_cert }}.{{ OVPN_HC.ext.key_unenc }}"
   changed_when: false
   check_mode: false
   no_log: true

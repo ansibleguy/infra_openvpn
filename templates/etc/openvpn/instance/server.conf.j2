@@ -14,8 +14,8 @@ reneg-sec {{ server.session_timeout_sec }}
 {% if server.compress | bool %}
 compress
 {% endif %}
-{% if server.log != 'syslog' %}
-log-append {{ server.log }}
+{% if server.log == 'file' %}
+log-append {{ OVPN_CONFIG.path.log }}/{{ server.log_file | replace('$server_name', server_name) }}
 {% endif %}
 
 {% if server.status_file | bool %}
@@ -28,15 +28,18 @@ management {{ OVPN_HC.path.run }}/{{ server_name }}_mgmt.sock unix
 ### NETWORK ###
 topology subnet
 dev-type tun
-dev {{ OVPN_CONFIG.interface_prefix + '_' + server_name | safe_int_name }}
+dev {{ OVPN_CONFIG.interface_prefix + server_name | safe_int_name }}
 tun-mtu {{ server.mtu }}
 {% for ip in server.ips | ensure_list %}
 local {{ ip }}
 {% endfor %}
 
 proto {{ server.proto }}
-server {{ server.network }}
 lport {{ server.port }}
+server {{ server.network | network_netmask }}
+{% if 'enable_iproute2=no' not in ovpn_flags.stdout %}
+iproute {{ OVPN_CONFIG.path.script }}/iproute_wrapper.sh
+{% endif %}
 
 {% if server.persistent_ips | bool %}
 ifconfig-pool-persist {{ server_base_dir }}/{{ OVPN_HC.file.persist }}
@@ -60,8 +63,8 @@ ca {{ server_base_dir }}/{{ OVPN_HC.dir.pki.base }}/{{ OVPN_HC.file.ca }}
 crl-verify {{ server_base_dir }}/{{ OVPN_HC.dir.pki.base }}/{{ OVPN_HC.file.crl }}
 dh {{ server_base_dir }}/{{ OVPN_HC.dir.pki.base }}/{{ OVPN_HC.file.dh }}
 
-cert {{ server_base_dir }}/{{ OVPN_HC.dir.pki.public }}/{{ OVPN_HC.cert_server }}.crt
-key {{ server_base_dir }}/{{ OVPN_HC.dir.pki.private }}/{{ OVPN_HC.cert_server }}.key
+cert {{ server_base_dir }}/{{ OVPN_HC.dir.pki.public }}/{{ OVPN_HC.cert_server }}.{{ OVPN_HC.ext.crt }}
+key {{ server_base_dir }}/{{ OVPN_HC.dir.pki.private }}/{{ OVPN_HC.cert_server }}.{{ OVPN_HC.ext.key_unenc }}
 
 data-ciphers {{ server.security.cipher.data }}
 tls-cipher {{ server.security.cipher.tls }}
@@ -77,7 +80,7 @@ tls-auth {{ server_base_dir }}/{{ OVPN_HC.file.tls_auth_key }}
 {% endif %}
 
 ## CERTIFICATES
-{% if 'certificate' in server.auth_providers | ensure_list %}
+{% if 'certificate' in server.auth.providers | ensure_list %}
 verify-client-cert require
 remote-cert-eku "TLS Web Client Authentication"
 {% else %}

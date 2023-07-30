@@ -1,11 +1,22 @@
 ---
 
-- name: "OpenVPN | Server {{ server_name }} | Enabling service"
+- name: "{{ task_prefix }} | Enabling service"
   ansible.builtin.systemd:
-    name: 'openvpn@{{ server_name }}.service'
+    name: "openvpn@{{ server_name }}.service"
     enabled: true
 
-- name: "OpenVPN | Server {{ server_name }} | Starting service"
+- name: "{{ task_prefix }} | Starting service"
   ansible.builtin.systemd:
-    name: 'openvpn@{{ server_name }}.service'
+    name: "openvpn@{{ server_name }}.service"
     state: started
+  ignore_errors: true
+  register: ovpn_service_start
+
+- name: "{{ task_prefix }} | Pretty error"
+  ansible.builtin.include_tasks: debian/instance/pretty_error.yml
+  when: ovpn_service_start.failed | default(false)
+  vars:
+    ovpn_service_action: "{{ ovpn_service_start }}"
+  args:
+    apply:
+      tags: [servers, instances, enable]

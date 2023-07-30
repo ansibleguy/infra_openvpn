@@ -1,0 +1,14 @@
+---
+
+- name: "{{ task_prefix }} | Pulling logs"
+  ansible.builtin.command: "journalctl -u openvpn@{{ server_name }}.service --no-pager --full -n 25"
+  changed_when: false
+  check_mode: false
+  register: ovpn_service_logs
+  when: ovpn_service_action.failed | default(false)
+
+- name: "{{ task_prefix }} | Pretty error"
+  ansible.builtin.fail:
+    msg: "Failed to start service 'openvpn@{{ server_name }}.service'!
+    Errors: '{{ ovpn_service_logs.stdout }}'"
+  when: ovpn_service_action.failed | default(false)

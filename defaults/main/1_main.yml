@@ -4,9 +4,12 @@
 
 no_prompts: false
 debug: false
+setup: false
+auto_restart: false
 
 # default config => is overwritten by provided config
 defaults_openvpn:
+  version: 'latest'
   support:
     clients: ['windows', 'linux', 'macos', 'chromeos']
     auth_providers:
@@ -19,12 +22,15 @@ defaults_openvpn:
     base: '/etc/openvpn'
     lib: '/var/local/lib/openvpn'
     backup: '/var/backups/openvpn'
+    script: '/usr/local/bin/openvpn'
+    log: '/var/log/openvpn'
 
   prefix_instance: 'server_'
   syslog:
     enable: true  # systemd will log to syslog
     stdout: true
     stderr: true
+    identifier: 'openvpn_%I'  # '%I' = instance/server name
 
   backup:
     enable: true  # enable local backup-job
@@ -34,7 +40,7 @@ defaults_openvpn:
     #   https://wiki.archlinux.org/title/Systemd/Timers
     #   https://silentlad.com/systemd-timers-oncalendar-(cron)-format-explained
 
-  interface_prefix: 'ovpn'
+  interface_prefix: 'ovpn_'
   instances: {}
 
 defaults_instance:
@@ -56,24 +62,31 @@ defaults_instance:
   status_file: true
   user_multi_connection: true  # allow one user to connect multiple times simultaneously
   additional_config_lines: []
-  log: 'syslog'  # or file
+  log: 'syslog'  # file, none
+  log_file: 'openvpn_$server_name.log'  # in path.log
   mtu: 1420
   push:
     routes: []
     dhcp_options: []
     dns_servers: []  # translated to 'dhcp-option DNS'
-  auth_providers: []  # 'certificate', 'ldap', 'system', 'totp'
+  auth:
+    providers: []  # 'certificate', 'ldap', 'system', 'totp'
+    timeout_sec: 5
+    debug: true
+    syslog: true
+    syslog_identifier: 'openvpn_auth_$server_name'
+    log_file: "$server_name_auth.log"  # in path.log
   pki:
-    algo: 'ed'  # rsa, ec, ed
-    curve: 'ed25519'
+    algo: 'ec'  # rsa, ec, ed; WARNING: 'ed' is not yet supported
+    curve: 'secp384r1'
     key_size: 4096  # 1024, 2048, 4096, 8192
     digest: 'sha256'  # md5, sha1, sha256, sha224, sha384, sha512
     pwd:
-      ca: "lookup('password', tmp_pwd_file_prefix + name + '_ca chars=ascii_letters,digits length=' + random_pwd_length)"
-      server: "lookup('password', tmp_pwd_file_prefix + name + '_srv chars=ascii_letters,digits length=' + random_pwd_length)"
-      client: "lookup('password', tmp_pwd_file_prefix + name + '_cli chars=ascii_letters,digits length=' + random_pwd_length)"
+      ca: "{{ lookup('password', tmp_pwd_file_prefix + server_name + '_ca chars=ascii_letters,digits length=' + random_pwd_length) }}"
+      cert: "{{ lookup('password', tmp_pwd_file_prefix + server_name + '_crt chars=ascii_letters,digits length=' + random_pwd_length) }}"
     cn:
       # '$server_name' will be replaced; whitespace will be replaced by '-'
+      root_ca: "OpenVPN Root-CA $server_name"
       ca: "OpenVPN CA $server_name"
       server: "OpenVPN Server $server_name"
     org: ''
@@ -91,9 +104,9 @@ defaults_instance:
     cipher:
       data: 'AES-256-GCM:AES-128-GCM:AES-256-CBC'
       # directly passed to openssl - see: https://wiki.openssl.org/index.php/TLS1.3#Ciphersuites
-      tls: "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:\
-      TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:TLS_DHE_RSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:\
-      TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:\
-      TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:TLS_DHE_RSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"
+      tls: "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:\
+      TLS_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:TLS_DHE_RSA_WITH_AES_256_GCM_SHA384:\
+      TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"
+      # TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:TLS_DHE_RSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
     hash_algo: 'SHA512'
     tls_crypt: true  # NO SUPPORT FOR CHROMEOS!

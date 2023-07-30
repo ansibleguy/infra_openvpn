@@ -1,0 +1,29 @@
+---
+
+- name: "{{ task_prefix }} | Checking if initialized"
+  ansible.builtin.stat:
+    path: "{{ server_base_dir }}/{{ OVPN_HC.dir.pki.private }}/ca.{{ OVPN_HC.ext.key_enc }}"
+  register: ovpn_pki_init
+
+# NOTE: needed for scripted actions like automated crl-update
+- name: "{{ task_prefix }} | Saving passwords"
+  ansible.builtin.copy:
+    content: "{{ item.pwd }}"
+    dest: "{{ server_base_dir }}/{{ OVPN_HC.dir.pki.root }}/{{ item.file }}"
+    mode: 0400  # if someone is already root - all hope is lost anyway
+    owner: 'root'
+    group: 'root'
+  no_log: true
+  with_items:
+    - {pwd: "{{ server.pki.pwd.ca }}", file: "{{ OVPN_HC.file.pwd.ca }}"}
+    - {pwd: "{{ server.pki.pwd.cert }}", file: "{{ OVPN_HC.file.pwd.cert }}"}
+  when: not ovpn_pki_init.stat.exists
+
+- name: "{{ task_prefix }} | Initializing"
+  ansible.builtin.include_role:
+    name: ansibleguy.infra_pki
+  args:
+    apply:
+      tags: [always]
+  no_log: true  # passwords
+  when: not ovpn_pki_init.stat.exists

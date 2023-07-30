@@ -28,18 +28,20 @@ OVPN_HC:
     crl: 'crl.pem'
     dh: 'dh.pem'
     pwd:
-      ca: 'pwd_ca.txt'
-      srv: 'pwd_srv.txt'
-      cli: 'pwd_cli.txt'
+      ca: '.pwd_ca.txt'
+      cert: '.pwd_crt.txt'
+    auth_config: 'auth.json'
   ext:
     p12_chromeos: 'p12.unencrypted.b64'
-    key: 'unencrypted.key'
+    key_enc: 'key'
+    key_unenc: 'unencrypted.key'
     crt: 'crt'
     totp: 'key'
   options:
     client_os: ['windows', 'linux', 'macos', 'chromeos']
     auth_providers: ['certificate', 'totp', 'ldap', 'system']
     proto: ['tcp', 'udp']
+    log: ['syslog', 'file', 'none']
 
 random_pwd_length: '50'  # must be string-type
 tmp_pwd_file_prefix: '/tmp/.ansibleguy.infra_openvpn_'

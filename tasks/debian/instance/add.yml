@@ -7,22 +7,26 @@
 # add auth-providers
 # initialize pki
 
-- name: "OpenVPN | Server {{ server_name }} | Add | Validating config"
+- name: "{{ task_prefix }} | Validating config"
   ansible.builtin.assert:
     that:
       - server.ips | ensure_list | length > 0
-      - server.network | is_ipaddress_cidr
-      - server.auth_providers | ensure_list | length > 0
-      - server.auth_providers | ensure_list | length == server.auth_providers | ensure_list | intersect(OVPN_HC.options.auth_providers) | length  # all providers are supported
+      - server.network | is_valid_network
+      - server.auth.providers | ensure_list | length > 0
+      - server.auth.providers | ensure_list | length == server.auth.providers | ensure_list | intersect(OVPN_HC.options.auth_providers) | length  # all providers are supported
       - server.proto in OVPN_HC.options.proto
+      - server.auth.timeout_sec | int > 0
+      - server.auth.timeout_sec | int < 60
       - server.port | int > 0
       - server.port | int < 65536
+      - server.log in OVPN_HC.options.log
       - server.log_level | int >= 0
       - server.log_level | int < 12
       - "' ' in server.keepalive"
+      - server.security.cipher.tls | length < 256
   tags: always
 
-- name: "OpenVPN | Server {{ server_name }} | Add | Inform user"
+- name: "{{ task_prefix }} | Inform user"
   ansible.builtin.pause:
     prompt: "No DNS-endpoints (server.dns) were supplied for the server '{{ server_name }}'.
     This is highly recommended if you have multiple clients!"
@@ -30,13 +34,15 @@
     - not no_prompts | bool
     - server.dns | ensure_list | length == 0
 
-- name: "OpenVPN | Server {{ server_name }} | Add | Initialize"
+- name: "{{ task_prefix }} | Initialize"
   ansible.builtin.include_tasks: debian/instance/init.yml
+  vars:
+    task_prefix: "OpenVPN | Server '{{ server_name }}' | Init"
   args:
     apply:
       tags: [servers, instances, add]
 
-- name: "OpenVPN | Server {{ server_name }} | Add | Config"
+- name: "{{ task_prefix }} | Config"
   ansible.builtin.template:
     src: 'templates/etc/openvpn/instance/server.conf.j2'
     dest: "{{ server_base_dir }}/server.conf"
@@ -45,12 +51,42 @@
     mode: 0440
   register: ovpn_server_config  # todo: restart with prompt
 
-- name: "OpenVPN | Server {{ server_name }} | Add | PKI"
-  ansible.builtin.include_tasks: debian/instance/pki.yml
-  when: "'certificate' in server.auth_providers | ensure_list"
+- name: "{{ task_prefix }} | Asking for restart"
+  ansible.builtin.pause:
+    prompt: "The server-config for instance '{{ server_name }}' has changed!
+    Should the service be restarted to apply the changes?
+    BE WARNED: Existing connections will be terminated!"
+  delegate_to: localhost
+  register: ovpn_server_restart
+  when:
+    - not no_prompts | bool
+    - not auto_restart | bool
+
+- name: "{{ task_prefix }} | Restarting service"
+  ansible.builtin.systemd:
+    name: "openvpn@{{ server_name }}.service"
+    state: restarted
+  register: ovpn_service_restart
+  ignore_errors: true
+  when: >
+    auto_restart | bool or
+    hostvars['localhost'].ovpn_server_restart.user_input | default(false) | bool
+
+- name: "{{ task_prefix }} | Pretty error"
+  ansible.builtin.include_tasks: debian/instance/pretty_error.yml
+  when: ovpn_service_restart.failed | default(false)
+  vars:
+    ovpn_service_action: "{{ ovpn_service_restart }}"
   args:
     apply:
       tags: [servers, instances, add]
 
-# todo: ip-wrapper
+- name: "{{ task_prefix }} | PKI"
+  ansible.builtin.include_tasks: debian/instance/pki/main.yml
+  vars:
+    task_prefix: "OpenVPN | Server '{{ server_name }}' | Add | PKI"
+  args:
+    apply:
+      tags: [servers, instances, add]
+
 # todo: nat & nftables option (with simplified ruleset definition)

@@ -29,13 +29,13 @@
 
 - name: OpenVPN | Export Profile | Certificate
   ansible.builtin.import_tasks: export_profile/cert.yml
-  when: "'certificate' in server.auth_providers | ensure_list"
+  when: "'certificate' in server.auth.providers | ensure_list"
 
 - name: OpenVPN | Export Profile | TOTP
   ansible.builtin.import_tasks: export_profile/totp.yml
   vars:
     client_totp: "{{ server_base_dir }}/{{ OVPN_HC.dir.totp }}/{{ client_name | default('none') }}.{{ OVPN_HC.ext.totp }}"
-  when: "'totp' in server.auth_providers | ensure_list"
+  when: "'totp' in server.auth.providers | ensure_list"
 
 - name: OpenVPN | Export Profile | Pulling tls-auth-key
   ansible.builtin.command: "cat {{ server_base_dir }}/{{ OVPN_HC.file.tls_auth_key }}"

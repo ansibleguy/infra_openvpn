@@ -2,11 +2,30 @@
 
 # todo: option to allow firewall to be managed by role (nftables)
 
+- name: OpenVPN | Showing debug info - user provided config
+  ansible.builtin.debug:
+    var: openvpn
+  when: debug | bool
+
+- name: OpenVPN | Showing debug info - running config
+  ansible.builtin.debug:
+    var: OVPN_CONFIG
+  when: debug | bool
+
 - name: OpenVPN | Setup
   ansible.builtin.import_tasks: debian/setup.yml
+  when: setup | bool
 
 - name: OpenVPN | Backup
   ansible.builtin.import_tasks: debian/backup.yml
+  when: setup | bool
+
+- name: OpenVPN | Pulling OpenVPN flags
+  ansible.builtin.command: 'openvpn --version'
+  register: ovpn_flags
+  check_mode: false
+  changed_when: false
+  tags: [always]
 
 - name: OpenVPN | Server instances
   ansible.builtin.import_tasks: debian/instance/main.yml

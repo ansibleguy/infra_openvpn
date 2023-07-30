@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# {{ ansible_managed }}
+
+# NOTE: command arguments are restricted in /etc/sudoers.d/openvpn
+# source: https://openvpn.net/community-resources/hardening-openvpn-security/
+
+set -e
+
+# shellcheck disable=SC2086,SC2048,SC2046
+echo 'none' | sudo --stdin $(which ip) $*

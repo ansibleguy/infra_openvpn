@@ -35,8 +35,9 @@
     name: "{{ OVPN_CONFIG.backup.service }}.timer"
     state: stopped
     enabled: false
-  register: ovpn_backup_disable
   when: not OVPN_CONFIG.backup.enable | bool
+  register: ovpn_backup_disable
   failed_when:
     - ovpn_backup_disable.failed
     - "'does not exist' not in ovpn_backup_disable.msg"
+    - "'Could not find' not in ovpn_backup_disable.msg"

@@ -1,7 +1,7 @@
 ---
 
 - name: OpenVPN | Auth | TOTP | Installing dependencies
-  ansible.builtin.apt:
+  ansible.builtin.package:
     name: ['libqrencode4']
 
 - name: OpenVPN | Auth | TOTP | Adding capabilities to OpenVPN binary

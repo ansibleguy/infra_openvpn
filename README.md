@@ -132,5 +132,12 @@ There are also some useful **tags** available:
 
 To debug errors - you can set the 'debug' variable at runtime:
 ```bash
+# WARNING: Will log passwords!
 ansible-playbook -K -D -i inventory/hosts.yml playbook.yml -e debug=yes
 ```
+
+To let **OpenVPN services be automatically restarted** (_without interactive prompts_):
+```bash
+ansible-playbook -K -D -i inventory/hosts.yml playbook.yml -e auto_restart=yes
+```
+
