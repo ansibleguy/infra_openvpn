@@ -1,0 +1,69 @@
+---
+
+- name: OpenVPN | Install | Install from repository
+  when: OVPN_CONFIG.download == 'repository'
+  block:
+    - name: OpenVPN | Install | Adding repository key
+      ansible.builtin.apt_key:
+        url: "{{ OVPN_HC.repo.gpg }}"
+        state: present
+
+    - name: OpenVPN | Install | Adding repository
+      ansible.builtin.apt_repository:
+        repo: "deb {{ OVPN_HC.repo.url }} {{ ansible_distribution_release }} main"
+        state: present
+        update_cache: true
+        filename: 'openvpn'
+
+    - name: OpenVPN | Install | Installing
+      ansible.builtin.package:
+        name: "openvpn{% if OVPN_CONFIG.version != 'latest' %}={{ OVPN_CONFIG.version }}{% endif %}"
+        state: present
+
+- name: OpenVPN | Install | Install Re-Compiled
+  when: OVPN_CONFIG.download == 'recompiled'
+  block:
+    - name: OpenVPN | Install | Pulling existing version
+      ansible.builtin.command: "{{ OVPN_HC.file.bin_recompiled }} --version"
+      register: ovpn_version_old
+      ignore_errors: true
+      no_log: true
+      changed_when: false
+      check_mode: false
+
+    - name: OpenVPN | Install | Downloading binary to /tmp
+      ansible.builtin.get_url:
+        url: "{{ ansible_distribution | latest_recompiled_release }}"
+        dest: '/tmp/openvpn'
+        mode: 0750
+      diff: false
+      when: >
+        OVPN_CONFIG.update_recompiled | bool or
+        ovpn_version_old.failed
+
+    - name: OpenVPN | Install | Pulling new version
+      ansible.builtin.command: '/tmp/openvpn --version'
+      register: ovpn_version_new
+      changed_when: false
+      check_mode: false
+      when: >
+        OVPN_CONFIG.update_recompiled | bool or
+        ovpn_version_old.failed
+
+    - name: OpenVPN | Install | Installing downloaded binary
+      ansible.builtin.copy:
+        src: '/tmp/openvpn'
+        remote_src: true
+        dest: "{{ OVPN_HC.file.bin_recompiled }}"
+        mode: 0750
+        owner: 'root'
+        group: "{{ OVPN_HC.user }}"
+      diff: false
+      when:
+        - OVPN_CONFIG.update_recompiled | bool or ovpn_version_old.failed
+        - ovpn_version_old.stdout | default('') != ovpn_version_new.stdout
+      register: ovpn_updated
+
+- name: OpenVPN | Install | Making sure OpenVPN is already installed
+  ansible.builtin.command: 'openvpn --version'
+  when: OVPN_CONFIG.download == 'none'

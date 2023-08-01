@@ -37,7 +37,7 @@ local {{ ip }}
 proto {{ server.proto }}
 lport {{ server.port }}
 server {{ server.network | network_netmask }}
-{% if 'enable_iproute2=no' not in ovpn_flags.stdout %}
+{% if OVPN_CONFIG.unprivileged | bool %}
 iproute {{ OVPN_CONFIG.path.script }}/iproute_wrapper.sh
 {% endif %}
 

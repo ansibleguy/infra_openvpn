@@ -10,6 +10,9 @@ auto_restart: false
 # default config => is overwritten by provided config
 defaults_openvpn:
   version: 'latest'
+  unprivileged: true
+  download: 'repository'  # 'none' or 'recompiled' (https://api.github.com/repos/ansibleguy/openvpn-recompile)
+  update_recompiled: false  # enable update if download=recompiled
   support:
     clients: ['windows', 'linux', 'macos', 'chromeos']
     auth_providers:
@@ -76,6 +79,7 @@ defaults_instance:
     syslog: true
     syslog_identifier: 'openvpn_auth_$server_name'
     log_file: "$server_name_auth.log"  # in path.log
+    mfa_separator: ':'  # custom characters can be used for workaround on clients that don't have a second field in their GUI
   pki:
     algo: 'ec'  # rsa, ec, ed; WARNING: 'ed' is not yet supported
     curve: 'secp384r1'

@@ -7,6 +7,7 @@
       - openvpn.instances is defined
       - OVPN_CONFIG.instances | is_dict
       - OVPN_CONFIG.instances | length > 0
+      - OVPN_CONFIG.download in OVPN_HC.options.download
   tags: always
 
 - name: OpenVPN | Processing debian config

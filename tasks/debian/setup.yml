@@ -1,26 +1,12 @@
 ---
 
-- name: OpenVPN | Setup | Adding repository key
-  ansible.builtin.apt_key:
-    url: "{{ OVPN_HC.repo.gpg }}"
-    state: present
-
-- name: OpenVPN | Setup | Adding repository
-  ansible.builtin.apt_repository:
-    repo: "deb {{ OVPN_HC.repo.url }} {{ ansible_distribution_release }} main"
-    state: present
-    update_cache: true
-    filename: 'openvpn'
-
 - name: OpenVPN | Setup | Installing dependencies
   ansible.builtin.package:
     name: ['openssl', 'python3-pexpect']
     state: present
 
 - name: OpenVPN | Setup | Installing
-  ansible.builtin.package:
-    name: "openvpn{% if OVPN_CONFIG.version != 'latest' %}={{ OVPN_CONFIG.version }}{% endif %}"
-    state: present
+  ansible.builtin.import_tasks: debian/install.yml
 
 - name: OpenVPN | Setup | Creating service user
   ansible.builtin.user:
@@ -29,7 +15,7 @@
 
 - name: OpenVPN | Setup | Adding capabilities to bind to system-ports (<1024)
   community.general.capabilities:
-    path: '/usr/sbin/openvpn'
+    path: "{{ ovpn_binary }}"
     capability: 'cap_net_bind_service+eip'
     state: present
   changed_when: false
@@ -82,7 +68,7 @@
     owner: 'root'
     group: 'root'
     mode: 0644
-  register: ovpn_override_config  # todo: restart with prompt
+  register: ovpn_override_config
 
 - name:  OpenVPN | Setup | Adding user privileges
   ansible.builtin.template:
@@ -101,10 +87,64 @@
     group: "{{ OVPN_HC.user }}"
     mode: 0750
   loop:
+    - 'auth_util.py'
+    - 'auth_pam.py'
+    - "{{ OVPN_HC.file.auth.ldap }}"
+    - "{{ OVPN_HC.file.auth.system }}"
+    - "{{ OVPN_HC.file.auth.totp }}"
+
+- name: OpenVPN | Setup | Copying scripts for unprivileged-mode
+  ansible.builtin.template:
+    src: "templates/usr/local/bin/openvpn/{{ item }}.j2"
+    dest: "{{ OVPN_CONFIG.path.script }}/{{ item }}"
+    owner: 'root'
+    group: "{{ OVPN_HC.user }}"
+    mode: 0750
+  loop:
     - 'iproute_wrapper.sh'
+  when: OVPN_CONFIG.unprivileged | bool
 
 - name: OpenVPN | Setup | Systemd Daemon-Reload
   ansible.builtin.systemd:
     daemon_reload: true
   when: ovpn_override_config.changed
 
+- name: OpenVPN | Setup | Asking user for restart
+  ansible.builtin.pause:
+    prompt: "The server-config for instance '{{ server_name }}' has changed!
+    Should the service be restarted to apply the changes?
+    BE WARNED: Existing connections will be terminated!"
+  delegate_to: localhost
+  register: ovpn_server_restart
+  when:
+    - ovpn_updated.changed | default(false) or ovpn_override_config.changed
+    - not no_prompts | bool
+    - not auto_restart | bool
+
+- name: OpenVPN | Setup | Restarting services
+  ansible.builtin.systemd:
+    name: "openvpn@{{ server_name }}.service"
+    state: restarted
+  ignore_errors: true
+  when: >
+    (ovpn_updated.changed | default(false) or ovpn_override_config.changed) and
+    (auto_restart | bool or
+    hostvars['localhost'].ovpn_server_restart.user_input | default(false) | bool) and
+    server.state != 'absent' and
+    server.enabled | bool
+  vars:
+    server_name: "{{ instance_item.key | sanitize_name }}"
+    server: "{{ defaults_instance | combine(instance_item.value, recursive=true) }}"
+  loop_control:
+    loop_var: instance_item
+  with_dict: "{{ OVPN_CONFIG.instances }}"
+  register: ovpn_service_restart
+
+- name: OpenVPN | Setup | Pretty error
+  ansible.builtin.include_tasks: debian/instance/pretty_error.yml
+  when: service_restart.failed | default(false)
+  vars:
+    ovpn_service_action: "{{ service_restart }}"
+  loop_control:
+    loop_var: service_restart
+  loop: "{{ ovpn_service_restart.results | default([]) }}"

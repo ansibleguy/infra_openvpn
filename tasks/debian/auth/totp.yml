@@ -6,7 +6,7 @@
 
 - name: OpenVPN | Auth | TOTP | Adding capabilities to OpenVPN binary
   community.general.capabilities:
-    path: '/usr/sbin/openvpn'
+    path: "{{ ovpn_binary }}"
     capability: 'cap_net_bind_service,cap_setuid,cap_setgid=+eip'  # setuid + setgid for google-authenticator
     state: present
   changed_when: false

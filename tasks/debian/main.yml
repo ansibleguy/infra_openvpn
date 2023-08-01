@@ -20,12 +20,26 @@
   ansible.builtin.import_tasks: debian/backup.yml
   when: setup | bool
 
+- name: OpenVPN | Setting binary
+  ansible.builtin.set_fact:
+    ovpn_binary: "{% if OVPN_CONFIG.download == 'recompiled' %}{{ OVPN_HC.file.bin_recompiled }}{% else %}/usr/sbin/openvpn{% endif %}"
+  tags: [always]
+
 - name: OpenVPN | Pulling OpenVPN flags
-  ansible.builtin.command: 'openvpn --version'
+  ansible.builtin.command: "{{ ovpn_binary }} --version"
   register: ovpn_flags
   check_mode: false
   changed_when: false
   tags: [always]
+
+- name: OpenVPN | Failing if unprivileged-mode is not supported by binary
+  ansible.builtin.fail:
+    msg: "The OpenVPN binary in use '{{ ovpn_binary }}' was not compiled with support for 'iproute2'
+    but you have 'openvpn.unprivileged' enabled!"
+  tags: [always]
+  when:
+    - OVPN_CONFIG.unprivileged | bool
+    - "'enable_iproute2=yes' in ovpn_flags.stdout"
 
 - name: OpenVPN | Server instances
   ansible.builtin.import_tasks: debian/instance/main.yml

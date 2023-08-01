@@ -5,6 +5,9 @@
 - name: OpenVPN Client-to-Site
   hosts: all   # should be limited
   become: true
-  gather_facts: yes
+  gather_facts: true
+  module_defaults:
+    ansible.builtin.setup:
+      gather_subset: ['distribution']
   roles:
     - ansibleguy.infra_openvpn
