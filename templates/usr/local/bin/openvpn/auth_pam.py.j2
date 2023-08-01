@@ -1,0 +1,50 @@
+from sys import exit as sys_exit
+from pathlib import Path
+
+try:
+    from auth_util import load_credentials, log
+
+except (ImportError, ModuleNotFoundError):
+    print(f"Unable to load '{Path(__file__).parent}/auth_util.py'")
+    sys_exit(1)
+
+try:
+    from pam import pam
+
+except (ImportError, ModuleNotFoundError):
+    log(
+        msg="Unable to load 'python-pam' module! "
+            "Make sure you have installed the package/module!",
+        level=1, fail=True,
+    )
+
+PAM_BASE = '/etc/pam.d'
+
+
+def auth_pam(pam_module: str, secret_nbr: int = 1) -> None:
+    pam_file = f"{PAM_BASE}/{pam_module}"
+    if not Path(pam_file).is_file():
+        log(msg=f"PAM module '{pam_file}' does not exist!", level=1, fail=True)
+
+    user, secret1, secret2 = load_credentials()
+    if secret_nbr == 1:
+        secret = secret1
+    else:
+        secret = secret2
+
+    log(f"AUTH PAM | Module '{pam_module}' | User '{user}'")
+    pam_check = pam()
+    pam_result = pam_check.authenticate(user, secret, service=pam_module)
+
+    log(
+        msg=f"AUTH PAM | Module '{pam_module}' | User '{user}' | "
+            f"Result: '{pam_check.code}' '{pam_check.reason}' '{pam_result}'",
+        level=3
+    )
+
+    if pam_result:
+        log(f"AUTH PAM | Module '{pam_module}' | User '{user}' | Authentication successful")
+        sys_exit(0)
+
+    log(f"AUTH PAM | Module '{pam_module}' | User '{user}' | Authentication failed")
+    sys_exit(1)

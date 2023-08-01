@@ -103,6 +103,27 @@ ansible-galaxy install -r requirements.yml
 * **Warning:** Not every setting/variable you provide will be checked for validity. Bad config might break the role!
 
 
+* **Info:** If you want to user `openvpn.unprivileged: true` for [gained system-security](https://openvpn.net/community-resources/hardening-openvpn-security/) the installed OpenVPN binary needs to support `iproute2`!
+
+  The role will check if the binary is compatible and fail is that is not the case!
+
+  **Options how to gain support for iproute2:**
+
+  * You will have to use a binary that was compiled with that option enabled
+    * Re-Compile OpenVPN yourself as seen in [this example script](https://github.com/ansibleguy/openvpn-recompiled/blob/main/scripts/build.sh) (_without the 'uninstall'_)
+    * Or configure the role to download a re-compiled binary from my [ansibleguy/openvpn-recompiled](https://github.com/ansibleguy/openvpn-recompiled) repository!
+  * Uninstall existing OpenVPN packages/binaries
+  * Copy/link the `openvpn` binary to `/usr/local/bin`
+
+
+* **Info:** If you are using multi-factor-authentication you might run into issues when some clients (_like ChromeOS_) do not support a second input field for the second secret!
+
+  You might need to set `openvpn.server.auth.mfa_separator` to any unusual characters you like. (_per example: <<<_)
+
+  This enables you to input both secret1 (_password_) and secret2 (_totp pin_) in the same input field! Like so: `p4ssW0rd<<<001122`
+
+  The default separator `:` will always be supported - even if you set a custom one. This allows both ways to be supported.
+
 ## Usage
 
 ### Config

@@ -1,6 +1,8 @@
 from uuid import uuid4
 from re import sub as regex_replace
 from re import match as regex_match
+from urllib import request
+from json import loads as json_loads
 
 from ipaddress import NetmaskValueError, AddressValueError, IPv4Network, IPv4Address, IPv6Address, IPv6Network
 
@@ -16,6 +18,7 @@ class FilterModule(object):
             "is_valid_network": self.is_valid_network,
             "network_netmask": self.network_netmask,
             "is_dict": self.is_dict,
+            "latest_recompiled_release": self.latest_recompiled_release,
         }
 
     @staticmethod
@@ -93,3 +96,35 @@ class FilterModule(object):
     @staticmethod
     def is_dict(data) -> bool:
         return isinstance(data, dict)
+
+    @staticmethod
+    def _higher_version(old: str, new: str) -> bool:
+        old, new = old.split('.'), new.split('.')
+
+        try:
+            return int(new[0]) > int(old[0]) or (
+                    int(new[0]) == int(old[0]) and int(new[1]) > int(old[1])
+            ) or (
+                    int(new[0]) == int(old[0]) and int(new[1]) == int(old[1]) and int(new[2]) >
+                    int(old[2])
+            )
+
+        except (IndexError, ValueError):
+            return False
+
+    @classmethod
+    def latest_recompiled_release(cls, distribution: str) -> str:
+        api = 'https://api.github.com/repos/ansibleguy/openvpn-recompiled/releases'
+        with request.urlopen(api) as result:
+            releases_ag_raw = json_loads(result.read())
+        highest = '0.0.0'
+        releases = {}
+
+        for entry in releases_ag_raw:
+            if cls._higher_version(old=highest, new=entry['name']):
+                highest = entry['name']
+                for asset in entry['assets']:
+                    if asset['name'].find(distribution) != -1:
+                        releases[entry['name']] = asset['browser_download_url']
+
+        return releases[highest]

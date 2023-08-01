@@ -16,15 +16,34 @@ DEBUG = {{ 'True' if server.auth.debug | bool else 'False' }}
 OVPN_SERVER = '{{ server_name }}'
 TIMEOUT_SEC = int('{{ server.auth.timeout_sec }}')
 AUTH_CONFIG_FILE = '{{ OVPN_HC.file.auth_config }}'
+AUTH_MFA_SEPARATOR = '{{ server.auth.mfa_separator }}'
 
 SYSLOG = {{ 'True' if server.auth.syslog | bool else 'False' }}
 SYSLOG_IDENTIFIER = '{{ server.auth.syslog_identifier }}'
 LOG_FILE = '{{ OVPN_CONFIG.path.log }}/{{ server.auth.log_file }}'
 SERVER_PLACEHOLDER = '$server_name'
 
+SCRIPTS = {
+    'ldap': '{{ OVPN_CONFIG.path.script }}/{{ OVPN_HC.file.auth.ldap }}',
+    'system': '{{ OVPN_CONFIG.path.script }}/{{ OVPN_HC.file.auth.system }}',
+    'totp': '{{ OVPN_CONFIG.path.script }}/{{ OVPN_HC.file.auth.totp }}',
+}
+
 if len(sys_argv) == 1:
     print('ERROR: MISSING ARGUMENT 1 - CREDENTIAL FILE')
     sys_exit(1)
+
+ENV_VARS = {
+    'OVPN_SERVER': 'OVPN_SERVER',
+    'AUTH_CONFIG': 'OVPN_AUTH_CONFIG',
+    'AUTH_CRED_FILE': 'OVPN_AUTH_CREDENTIAL_FILE',
+    'AUTH_PROVIDER': 'OVPN_AUTH_PROVIDER',
+    'AUTH_DEBUG': 'OVPN_AUTH_DEBUG',
+    'AUTH_SYSLOG': 'OVPN_AUTH_SYSLOG',
+    'AUTH_SYSLOG_ID': 'OVPN_AUTH_SYSLOG_ID',
+    'AUTH_LOG_FILE': 'OVPN_AUTH_LOG_FILE',
+    'AUTH_MFA_SEPARATOR': 'OVPN_AUTH_MFA_SEPARATOR',
+}
 
 CREDENTIAL_FILE = sys_argv[1]
 CWD = Path(__file__).parent
@@ -76,9 +95,11 @@ def log(msg: str, level=3):
         logger.debug(msg)
 
 
-def _authentication_script(cmd: list) -> bool:
+def _authentication_script(script: str) -> bool:
+    binary = 'python3' if script.endswith('.py') else 'bash'
+
     with subprocess_popen(
-        cmd,
+        [binary, script],
         shell=True,
         stdout=subprocess_pipe,
         stderr=subprocess_pipe
@@ -95,8 +116,13 @@ def _authentication_script(cmd: list) -> bool:
 # pylint: disable=W0718
 try:
     log('Processing authentication')
-    environ['OVPN_SERVER'] = OVPN_SERVER
-    environ['OVPN_CREDENTIAL_FILE'] = CREDENTIAL_FILE
+    environ[ENV_VARS['OVPN_SERVER']] = OVPN_SERVER
+    environ[ENV_VARS['AUTH_CRED_FILE']] = CREDENTIAL_FILE
+    environ[ENV_VARS['AUTH_SYSLOG']] = '1' if SYSLOG else '0'
+    environ[ENV_VARS['AUTH_SYSLOG_ID']] = SYSLOG_IDENTIFIER
+    environ[ENV_VARS['AUTH_LOG_FILE']] = LOG_FILE
+    environ[ENV_VARS['AUTH_DEBUG']] = '1' if DEBUG else '0'
+    environ[ENV_VARS['AUTH_MFA_SEPARATOR']] = AUTH_MFA_SEPARATOR
 
     if not Path(AUTH_CONFIG_FILE_PATH).is_file():
         log(f"Unable to load config from file: '{AUTH_CONFIG_FILE_PATH}'", level=1)
@@ -109,10 +135,10 @@ try:
 
     for provider_name, provider_config in AUTH_CONFIG.items():
         log(f"Processing authentication provider '{provider_name}'")
-        environ['OVPN_AUTH_PROVIDER'] = provider_name
-        environ['OVPN_AUTH_CONFIG'] = json_dumps(provider_config)
+        environ[ENV_VARS['AUTH_PROVIDER']] = provider_name
+        environ[ENV_VARS['AUTH_CONFIG']] = json_dumps(provider_config)
 
-        provider_result = _authentication_script(provider_config['cmd'])
+        provider_result = _authentication_script(SCRIPTS[provider_name])
 
         if not provider_result:
             log(f"Authentication using provider '{provider_name}' failed!", level=2)

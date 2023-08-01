@@ -1,0 +1,23 @@
+from sys import exit as sys_exit
+from pathlib import Path
+
+try:
+    from auth_util import AUTH_CONFIG, ENV_VARS, load_credentials, log
+
+except (ImportError, ModuleNotFoundError):
+    print(f"Unable to load '{Path(__file__).parent}/auth_util.py'")
+    sys_exit(1)
+
+try:
+    from auth_pam import auth_pam
+
+except (ImportError, ModuleNotFoundError):
+    print(f"Unable to load '{Path(__file__).parent}/auth_pam.py'")
+    sys_exit(1)
+
+PAM_MODULE_SYSTEM = '{{ OVPN_HC.file.pam.system }}'
+
+if __name__ == '__main__':
+    # todo: system-auth may not always be the first secret if used for MFA
+    auth_pam(pam_module=PAM_MODULE_SYSTEM, secret_nbr=1)
+    sys_exit(1)

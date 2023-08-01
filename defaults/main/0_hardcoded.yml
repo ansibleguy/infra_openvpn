@@ -31,6 +31,14 @@ OVPN_HC:
       ca: '.pwd_ca.txt'
       cert: '.pwd_crt.txt'
     auth_config: 'auth.json'
+    bin_recompiled: '/usr/local/sbin/openvpn'
+    pam:
+      system: 'openvpn_auth_system'
+      totp: 'openvpn_auth_totp'
+    auth:
+      ldap: 'auth_ldap.py'
+      system: 'auth_system.py'
+      totp: 'auth_totp.py'
   ext:
     p12_chromeos: 'p12.unencrypted.b64'
     key_enc: 'key'
@@ -42,6 +50,7 @@ OVPN_HC:
     auth_providers: ['certificate', 'totp', 'ldap', 'system']
     proto: ['tcp', 'udp']
     log: ['syslog', 'file', 'none']
+    download: ['repository', 'none', 'recompiled']
 
 random_pwd_length: '50'  # must be string-type
 tmp_pwd_file_prefix: '/tmp/.ansibleguy.infra_openvpn_'

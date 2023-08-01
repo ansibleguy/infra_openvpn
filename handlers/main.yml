@@ -1,0 +1,32 @@
+---
+
+- name: ovpn_restart_all
+  block:
+    - name: Asking user for restart
+      ansible.builtin.pause:
+        prompt: "The server-config for instance '{{ server_name }}' has changed!
+        Should the service be restarted to apply the changes?
+        BE WARNED: Existing connections will be terminated!"
+      delegate_to: localhost
+      register: ovpn_server_restart
+      when:
+        - not no_prompts | bool
+        - not auto_restart | bool
+
+    - name: Restarting services
+      ansible.builtin.systemd:
+        name: "openvpn@{{ server_name }}.service"
+        state: restarted
+      ignore_errors: true
+      register: ovpn_service_restart
+      when: >
+        (auto_restart | bool or
+        hostvars['localhost'].ovpn_server_restart.user_input | default(false) | bool) and
+        server.state != 'absent' and
+        server.enabled | bool
+      vars:
+        server_name: "{{ instance_item.key | sanitize_name }}"
+        server: "{{ defaults_instance | combine(instance_item.value, recursive=true) }}"
+      loop_control:
+        loop_var: instance_item
+      with_dict: "{{ OVPN_CONFIG.instances }}"

@@ -1,0 +1,115 @@
+import logging
+from os import environ
+from logging.handlers import SysLogHandler
+from pathlib import Path
+from base64 import b64decode
+from json import JSONDecodeError
+
+from json import loads as json_loads
+from sys import exit as sys_exit
+
+DEFAULT_MFA_SEPARATOR = ':'
+
+ENV_VARS = {
+    'OVPN_SERVER': 'OVPN_SERVER',
+    'AUTH_CONFIG': 'OVPN_AUTH_CONFIG',
+    'AUTH_CRED_FILE': 'OVPN_AUTH_CREDENTIAL_FILE',
+    'AUTH_PROVIDER': 'OVPN_AUTH_PROVIDER',
+    'AUTH_DEBUG': 'OVPN_AUTH_DEBUG',
+    'AUTH_SYSLOG': 'OVPN_AUTH_SYSLOG',
+    'AUTH_SYSLOG_ID': 'OVPN_AUTH_SYSLOG_ID',
+    'AUTH_LOG_FILE': 'OVPN_AUTH_LOG_FILE',
+    'AUTH_MFA_SEPARATOR': 'OVPN_AUTH_MFA_SEPARATOR',
+}
+
+for var in ENV_VARS.values():
+    if var not in environ:
+        print(f"ERROR: Environmental variable '{var}' not found!")
+        sys_exit(1)
+
+if environ[ENV_VARS['AUTH_SYSLOG']] == '1':
+    # syslog logging
+    syslog_handler = SysLogHandler(address='/dev/log')
+    syslog_handler.ident = environ[ENV_VARS['AUTH_SYSLOG_ID']]
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(syslog_handler)
+
+else:
+    class Logger:
+        @staticmethod
+        def log(msg: str, prefix: str):
+            with open(environ[ENV_VARS['AUTH_LOG_FILE']], 'a', encoding='utf-8') as file:
+                file.write(f"{prefix} | {msg}\n")
+
+        @classmethod
+        def critical(cls, msg: str):
+            cls.log(prefix='CRIT', msg=msg)
+
+        @classmethod
+        def warning(cls, msg: str):
+            cls.log(prefix='WARN', msg=msg)
+
+        @classmethod
+        def debug(cls, msg: str):
+            cls.log(prefix='DEBUG', msg=msg)
+
+
+    logger = Logger()
+
+
+def log(msg: str, level: int = 2, fail: bool = False):
+    if level == 1:
+        logger.critical(msg)
+        if fail:
+            sys_exit(1)
+
+    elif level == 2:
+        logger.warning(msg)
+        if fail:
+            sys_exit(1)
+
+    elif environ[ENV_VARS['AUTH_DEBUG']] == '1':
+        logger.debug(msg)
+
+
+try:
+    AUTH_CONFIG = json_loads(environ[ENV_VARS['AUTH_CONFIG']])
+
+except JSONDecodeError:
+    log(
+        msg=f"Authentication config '{environ[ENV_VARS['AUTH_CONFIG']]}' is not valid JSON!",
+        level=1, fail=True,
+    )
+
+
+def load_credentials() -> tuple[str, str, (str, None)]:
+    user, secret1, secret2 = '', '', None
+    cred_file = environ[ENV_VARS['AUTH_CRED_FILE']]
+    mfa_sep = environ[ENV_VARS['AUTH_MFA_SEPARATOR']]
+
+    if not Path(cred_file).is_file():
+        log(msg=f"Credential file '{cred_file}' does not exist!", level=1, fail=True)
+
+    with open(cred_file, 'r', encoding='utf-8') as _cred_file:
+        _lines = _cred_file.readlines()
+        user = _lines[0].strip()
+        raw_secret = _lines[1].strip()
+
+    if raw_secret.find(':') != -1:
+        secret1 = b64decode(raw_secret.split(':')[1].encode('utf-8')).decode('utf-8')
+        secret2 = b64decode(raw_secret.split(':')[2].encode('utf-8')).decode('utf-8')
+
+    elif mfa_sep != DEFAULT_MFA_SEPARATOR:
+        # workaround for clients that don't have a second field in their GUI
+        if raw_secret.find(mfa_sep) != -1:
+            log(f"User '{user}' is authenticating using a MFA workaround", level=2)
+            secret1, secret2 = raw_secret.split(mfa_sep, 1)
+
+    if secret2 is None:
+        secret1 = raw_secret
+
+    elif secret2.endswith('#012'):  # newline
+        secret2 = secret2[:-4]
+
+    return user, secret1, secret2

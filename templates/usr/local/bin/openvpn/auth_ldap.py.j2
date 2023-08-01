@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+
+# see: https://www.python-ldap.org/_/downloads/en/python-ldap-3.3.0/pdf/
+
+from sys import exit as sys_exit
+import ssl
+from pathlib import Path
+
+try:
+    from auth_util import AUTH_CONFIG, ENV_VARS, load_credentials, log
+
+except (ImportError, ModuleNotFoundError):
+    print(f"Unable to load '{Path(__file__).parent}/auth_util.py'")
+    sys_exit(1)
+
+try:
+    import ldap3
+    from ldap3.utils.conv import escape_filter_chars as ldap_escape_filter_chars
+
+except (ImportError, ModuleNotFoundError):
+    log(
+        msg="Unable to load 'python3-ldap3' module! "
+            "Make sure you have installed the package/module!",
+        level=1, fail=True,
+    )
+
+# some providers like google don't support all attributes
+LDAP_ATTRIBUTE_IGNORE = [
+    'createTimestamp',
+    'modifyTimestamp',
+]
+LDAP_IP_MODE_MAPPING = {
+    4: ldap3.IP_V4_ONLY,
+    6: ldap3.IP_V6_ONLY,
+    46: ldap3.IP_V4_PREFERRED,
+    64: ldap3.IP_V6_PREFERRED,
+}
+LDAP_TLS_VERSION_MAPPING = {
+    1.0: ssl.PROTOCOL_TLSv1,
+    1.1: ssl.PROTOCOL_TLSv1_1,
+    1.2: ssl.PROTOCOL_TLSv1_2,
+}
+
+
+def _server() -> ldap3.Server:
+    mode = ldap3.IP_SYSTEM_DEFAULT
+
+    if AUTH_CONFIG['ip_version'] in LDAP_IP_MODE_MAPPING:
+        mode = LDAP_IP_MODE_MAPPING[AUTH_CONFIG['ip_version']]
+
+    if AUTH_CONFIG['tls']:
+        return ldap3.Server(
+            host=AUTH_CONFIG['server'],
+            tls=_tls(),
+            mode=mode,
+            port=AUTH_CONFIG['port'],
+            use_ssl=True,
+        )
+
+    return ldap3.Server(
+        host=AUTH_CONFIG['server'],
+        mode=mode,
+        port=AUTH_CONFIG['port'],
+        use_ssl=False,
+    )
+
+
+def _tls_set_cert(ssl_context: dict, ctx_key: str, config_key: str):
+    try:
+        if Path(AUTH_CONFIG[config_key]).is_file():
+            ssl_context[ctx_key] = AUTH_CONFIG[config_key + '_file']
+
+        else:
+            ssl_context[ctx_key] = AUTH_CONFIG[config_key + '_data']
+
+    except OSError:
+        ssl_context[ctx_key] = AUTH_CONFIG[config_key + '_data']
+
+
+def _tls() -> ldap3.Tls:
+    tls_version = ssl.PROTOCOL_TLS
+
+    if AUTH_CONFIG['tls_version'] in LDAP_TLS_VERSION_MAPPING:
+        tls_version = LDAP_TLS_VERSION_MAPPING[AUTH_CONFIG['tls_version']]
+
+    ssl_context = {
+        'validate': ssl.CERT_REQUIRED,
+        'version': tls_version,
+    }
+
+    _tls_set_cert(ssl_context=ssl_context, ctx_key='ca_certs', config_key='ca')
+
+    ldap3.set_config_parameter(
+        'ATTRIBUTES_EXCLUDED_FROM_CHECK',
+        ldap3.get_config_parameter('ATTRIBUTES_EXCLUDED_FROM_CHECK') +
+        LDAP_ATTRIBUTE_IGNORE +
+        AUTH_CONFIG['ignore_attrs']
+    )
+
+    if AUTH_CONFIG['use_client_cert']:
+        _tls_set_cert(ssl_context=ssl_context, ctx_key='local_certificate', config_key='client_cert')
+        _tls_set_cert(ssl_context=ssl_context, ctx_key='local_private_key', config_key='client_key')
+        if AUTH_CONFIG['client_key_pwd'] not in ['', ' ', None]:
+            ssl_context['local_private_key_password'] = AUTH_CONFIG['client_key_pwd']
+
+    return ldap3.Tls(**ssl_context)
+
+
+def auth_ldap() -> None:
+    if AUTH_CONFIG['filter'].find('%s') == -1:
+        log(
+            msg="The LDAP Filter needs to contain the username-placeholder '%s'! "
+                f"Got: '{AUTH_CONFIG['filter']}'",
+            level=1,
+            fail=True,
+        )
+
+    user, secret, _ = load_credentials()
+
+    user = ldap_escape_filter_chars(user)
+    server = _server()
+    ldap = ldap3.Connection(
+        server=server,
+        user=AUTH_CONFIG['bind']['user'],
+        password=AUTH_CONFIG['bind']['pwd'],
+    )
+
+    # bind with service user to check if user is authorized
+    ldap.open()
+    if ldap.bind():
+        log(msg='AUTH LDAP | Bind user | Authentication successful', level=3)
+        ldap.search(
+            search_base=AUTH_CONFIG['base_dn'],
+            search_filter=AUTH_CONFIG['filter'] % user,
+        )
+        if len(ldap.entries) == 1:
+            log(f"AUTH LDAP | User '{user}' | Authorized")
+            ldap_user = ldap.entries[0]
+            log(msg=f"AUTH LDAP | User '{user}' | Matched filter: '{AUTH_CONFIG['filter']}'", level=3)
+
+            # validate actual user credentials
+            login_test = ldap3.Connection(
+                server=server,
+                user=ldap_user.entry_dn,
+                password=secret,
+            )
+            login_test.open()
+
+            if login_test.bind():
+                login_test.unbind()
+                log(f"AUTH LDAP | User '{user}' | Authentication successful")
+                sys_exit(0)
+
+            log(f"AUTH LDAP | User '{user}' | Authentication failed")
+
+        else:
+            log(f"AUTH LDAP | User '{user}' | Unauthorized")
+
+    else:
+        log('AUTH LDAP | Bind User | Authentication failed')
+
+    sys_exit(1)
+
+
+if __name__ == '__main__':
+    # todo: ldap may not always be the first secret if used for MFA
+    auth_ldap()
+    sys_exit(1)
