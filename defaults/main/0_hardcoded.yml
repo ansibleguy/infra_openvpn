@@ -52,5 +52,10 @@ OVPN_HC:
     log: ['syslog', 'file', 'none']
     download: ['repository', 'none', 'recompiled']
 
+  sysctl_forwarding:
+    'net.ipv4.ip_forward': 1
+    'net.ipv4.conf.all.arp_filter': 0
+    'net.ipv4.conf.all.rp_filter': 2
+
 random_pwd_length: '50'  # must be string-type
 tmp_pwd_file_prefix: '/tmp/.ansibleguy.infra_openvpn_'

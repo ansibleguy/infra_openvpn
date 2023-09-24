@@ -104,6 +104,15 @@
     - 'iproute_wrapper.sh'
   when: OVPN_CONFIG.unprivileged | bool
 
+- name: OpenVPN | Setup | Configuring sysctl to allow traffic forwarding
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_set: yes
+    state: present
+    reload: yes
+  with_dict: "{{ OVPN_HC.sysctl_forwarding }}"
+
 - name: OpenVPN | Setup | Systemd Daemon-Reload
   ansible.builtin.systemd:
     daemon_reload: true
