@@ -38,6 +38,10 @@ This role uses the [OpenSource](https://github.com/OpenVPN/openvpn) [OpenVPN Com
 ## Install
 
 ```bash
+# latest
+ansible-galaxy role install git+https://github.com/ansibleguy/infra_openvpn
+
+# from galaxy
 ansible-galaxy install ansibleguy.infra_openvpn
 
 # or to custom role-path
