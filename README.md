@@ -35,6 +35,7 @@ This role uses the [OpenSource](https://github.com/OpenVPN/openvpn) [OpenVPN Com
 
 **Tested:**
 * Debian 11
+* Debian 12
 
 ## Install
 
