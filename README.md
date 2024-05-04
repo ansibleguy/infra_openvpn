@@ -6,6 +6,8 @@
 
 # Ansible Role - OpenVPN Client-to-Site VPN
 
+**WARNING:** This role is still in development. **DO NOT TRY TO USE IN PRODUCTION**!
+
 Role to deploy OpenVPN Client-to-Site VPN setups.
 
 <a href='https://ko-fi.com/ansible0guy' target='_blank'><img height='35' style='border:0px;height:46px;' src='https://az743702.vo.msecnd.net/cdn/kofi3.png?v=0' border='0' alt='Buy me a coffee' />
