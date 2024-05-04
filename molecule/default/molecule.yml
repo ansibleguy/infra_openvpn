@@ -20,6 +20,7 @@ platforms:
     image: 'ansible0guy/molecule:debian-latest'
     tmpfs: ['/tmp', '/run', '/run/lock']
     privileged: true
+    command: '/sbin/init'
 
   - name: test-ag-ovpn-1
     networks:
@@ -30,6 +31,7 @@ platforms:
     image: 'ansible0guy/molecule:debian-latest'
     tmpfs: ['/tmp', '/run', '/run/lock']
     privileged: true
+    command: '/sbin/init'
 
 provisioner:
   name: ansible
