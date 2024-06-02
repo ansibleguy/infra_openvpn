@@ -57,6 +57,50 @@ ansible-galaxy install ansibleguy.infra_openvpn --roles-path ./roles
 ansible-galaxy install -r requirements.yml
 ```
 
+----
+
+## Usage
+
+You want a simple Ansible GUI? Check-out my [Ansible WebUI](https://github.com/ansibleguy/webui)
+
+### Config
+
+Define the config as needed:
+
+```yaml
+openvpn:
+
+```
+
+You might want to use 'ansible-vault' to encrypt your passwords:
+```bash
+ansible-vault encrypt_string
+```
+
+### Execution
+
+Run the playbook:
+```bash
+ansible-playbook -K -D -i inventory/hosts.yml playbook.yml
+```
+
+There are also some useful **tags** available:
+* 
+*
+
+To debug errors - you can set the 'debug' variable at runtime:
+```bash
+# WARNING: Will log passwords!
+ansible-playbook -K -D -i inventory/hosts.yml playbook.yml -e debug=yes
+```
+
+To let **OpenVPN services be automatically restarted** (_without interactive prompts_):
+```bash
+ansible-playbook -K -D -i inventory/hosts.yml playbook.yml -e auto_restart=yes
+```
+
+----
+
 ## Functionality
 
 * **Package installation**
@@ -132,44 +176,3 @@ ansible-galaxy install -r requirements.yml
   This enables you to input both secret1 (_password_) and secret2 (_totp pin_) in the same input field! Like so: `p4ssW0rd<<<001122`
 
   The default separator `:` will always be supported - even if you set a custom one. This allows both ways to be supported.
-
-## Usage
-
-You want a simple Ansible GUI? Check-out my [Ansible WebUI](https://github.com/ansibleguy/webui)
-
-### Config
-
-Define the config as needed:
-
-```yaml
-openvpn:
-
-```
-
-You might want to use 'ansible-vault' to encrypt your passwords:
-```bash
-ansible-vault encrypt_string
-```
-
-### Execution
-
-Run the playbook:
-```bash
-ansible-playbook -K -D -i inventory/hosts.yml playbook.yml
-```
-
-There are also some useful **tags** available:
-* 
-*
-
-To debug errors - you can set the 'debug' variable at runtime:
-```bash
-# WARNING: Will log passwords!
-ansible-playbook -K -D -i inventory/hosts.yml playbook.yml -e debug=yes
-```
-
-To let **OpenVPN services be automatically restarted** (_without interactive prompts_):
-```bash
-ansible-playbook -K -D -i inventory/hosts.yml playbook.yml -e auto_restart=yes
-```
-
