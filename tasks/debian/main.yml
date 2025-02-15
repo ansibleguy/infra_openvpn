@@ -13,7 +13,7 @@
   when: debug | bool
 
 - name: OpenVPN | Setup
-  ansible.builtin.import_tasks: debian/setup.yml
+  ansible.builtin.import_tasks: debian/setup/main.yml
   when: setup | bool
 
 - name: OpenVPN | Backup
