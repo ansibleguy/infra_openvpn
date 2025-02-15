@@ -70,7 +70,7 @@
     mode: 0644
   register: ovpn_override_config
 
-- name:  OpenVPN | Setup | Adding user privileges
+- name: OpenVPN | Setup | Adding user privileges
   ansible.builtin.template:
     src: 'templates/etc/sudoers.d/openvpn.j2'
     dest: '/etc/sudoers.d/openvpn'
