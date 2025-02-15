@@ -7,6 +7,11 @@
 
 - name: OpenVPN | Setup | Installing
   ansible.builtin.import_tasks: debian/install.yml
+  when: OVPN_CONFIG.download != 'recompiled'
+
+- name: OpenVPN | Setup | Downloading Recompiled Binary
+  ansible.builtin.import_tasks: debian/download_recompiled.yml
+  when: OVPN_CONFIG.download == 'recompiled'
 
 - name: OpenVPN | Setup | Creating service user
   ansible.builtin.user:

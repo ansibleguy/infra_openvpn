@@ -1,0 +1,42 @@
+---
+
+- name: OpenVPN | Download | Pulling existing version
+  ansible.builtin.command: "{{ OVPN_HC.file.bin_recompiled }} --version"
+  register: ovpn_version_old
+  ignore_errors: true
+  no_log: true
+  changed_when: false
+  check_mode: false
+
+- name: OpenVPN | Download | Downloading binary to /tmp
+  ansible.builtin.get_url:
+    url: "{{ ansible_distribution | latest_recompiled_release }}"
+    dest: '/tmp/openvpn'
+    mode: 0750
+  diff: false
+  when: >
+    OVPN_CONFIG.update_recompiled | bool or
+    ovpn_version_old.failed
+
+- name: OpenVPN | Download | Pulling new version
+  ansible.builtin.command: '/tmp/openvpn --version'
+  register: ovpn_version_new
+  changed_when: false
+  check_mode: false
+  when: >
+    OVPN_CONFIG.update_recompiled | bool or
+    ovpn_version_old.failed
+
+- name: OpenVPN | Download | Installing downloaded binary
+  ansible.builtin.copy:
+    src: '/tmp/openvpn'
+    remote_src: true
+    dest: "{{ OVPN_HC.file.bin_recompiled }}"
+    mode: 0750
+    owner: 'root'
+    group: "{{ OVPN_HC.user }}"
+  diff: false
+  when:
+    - OVPN_CONFIG.update_recompiled | bool or ovpn_version_old.failed
+    - ovpn_version_old.stdout | default('') != ovpn_version_new.stdout
+  register: ovpn_updated
