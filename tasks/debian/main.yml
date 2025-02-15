@@ -20,9 +20,15 @@
   ansible.builtin.import_tasks: debian/backup.yml
   when: setup | bool
 
+- name: OpenVPN | Setting binary (1/2)
+  ansible.builtin.command: 'which openvpn'
+  changed_when: false
+  register: ovpn_binary_default
+  tags: [always]
+
 - name: OpenVPN | Setting binary
   ansible.builtin.set_fact:
-    ovpn_binary: "{% if OVPN_CONFIG.download == 'recompiled' %}{{ OVPN_HC.file.bin_recompiled }}{% else %}/usr/sbin/openvpn{% endif %}"
+    ovpn_binary: "{% if OVPN_CONFIG.download == 'recompiled' %}{{ OVPN_HC.file.bin_recompiled }}{% else %}{{ ovpn_binary_default.stdout_lines[0] }}{% endif %}"
   tags: [always]
 
 - name: OpenVPN | Pulling OpenVPN flags

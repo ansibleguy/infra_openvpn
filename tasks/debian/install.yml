@@ -16,7 +16,7 @@
         filename: 'openvpn'
 
     - name: OpenVPN | Install | Installing
-      ansible.builtin.package:
+      ansible.builtin.apt:
         name: "openvpn{% if OVPN_CONFIG.version != 'latest' %}={{ OVPN_CONFIG.version }}{% endif %}"
         state: present
 
