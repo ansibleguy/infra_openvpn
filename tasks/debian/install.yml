@@ -1,7 +1,7 @@
 ---
 
 - name: OpenVPN | Install | Install from repository
-  when: OVPN_CONFIG.download == 'repository'
+  when: OVPN_CONFIG.download != 'recompiled'
   block:
     - name: OpenVPN | Install | Adding repository key
       ansible.builtin.apt_key:
@@ -63,8 +63,3 @@
         - OVPN_CONFIG.update_recompiled | bool or ovpn_version_old.failed
         - ovpn_version_old.stdout | default('') != ovpn_version_new.stdout
       register: ovpn_updated
-
-- name: OpenVPN | Install | Making sure OpenVPN is already installed
-  ansible.builtin.command: 'openvpn --version'
-  changed_when: false
-  when: OVPN_CONFIG.download == 'none'
