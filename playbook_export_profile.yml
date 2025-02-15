@@ -6,6 +6,7 @@
   hosts: all   # should be limited
   become: true
   gather_facts: yes
+  strategy: linear
 
   vars_prompt:
     - name: server_name
@@ -27,6 +28,7 @@
   tasks:
     - name: OpenVPN | Export Profile
       ansible.builtin.import_role:
-        role: ansibleguy.infra_openvpn
+        name: ansibleguy.infra_openvpn
         tasks_from: export_profile/main.yml
       run_once: true
+      tags: skip_ansible_lint  # run_once in strategy free

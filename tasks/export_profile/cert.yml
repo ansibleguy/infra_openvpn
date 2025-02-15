@@ -4,6 +4,7 @@
   ansible.builtin.command: "ls {{ server_base_dir }}/{{ OVPN_HC.dir.pki.public }}"
   check_mode: false
   register: ovpn_ep_certs
+  changed_when: false
 
 - name: OpenVPN | Export Profile | Certs | Searching certificate by client-name
   ansible.builtin.set_fact:

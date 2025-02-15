@@ -1,6 +1,6 @@
 ---
 
-- name: ovpn_restart_all
+- name: OVPN_restart_all
   block:
     - name: Asking user for restart
       ansible.builtin.pause:

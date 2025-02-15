@@ -4,6 +4,7 @@
 
 collections:
   - 'community.general'
+  - 'ansible.posix'
 
 roles:
   - src: 'ansibleguy.infra_pki'

@@ -66,4 +66,5 @@
 
 - name: OpenVPN | Install | Making sure OpenVPN is already installed
   ansible.builtin.command: 'openvpn --version'
+  changed_when: false
   when: OVPN_CONFIG.download == 'none'

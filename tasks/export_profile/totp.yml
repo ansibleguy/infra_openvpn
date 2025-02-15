@@ -19,3 +19,4 @@
   check_mode: false
   no_log: true
   register: ovpn_ep_totp_key
+  changed_when: false
