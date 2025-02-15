@@ -26,7 +26,7 @@
   register: ovpn_binary_default
   tags: [always]
 
-- name: OpenVPN | Setting binary
+- name: OpenVPN | Setting binary (2/2)
   ansible.builtin.set_fact:
     ovpn_binary: "{% if OVPN_CONFIG.download == 'recompiled' %}{{ OVPN_HC.file.bin_recompiled }}{% else %}{{ ovpn_binary_default.stdout_lines[0] }}{% endif %}"
   tags: [always]
