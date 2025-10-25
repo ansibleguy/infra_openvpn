@@ -10,16 +10,16 @@
 
 Role to deploy OpenVPN Client-to-Site VPN setups.
 
-[![Lint](https://github.com/ansibleguy/infra_openvpn/actions/workflows/lint.yml/badge.svg)](https://github.com/ansibleguy/infra_openvpn/actions/workflows/lint.yml)
-[![Ansible Galaxy](https://badges.ansibleguy.net/galaxy.badge.svg)](https://galaxy.ansible.com/ui/standalone/roles/ansibleguy/infra_openvpn)
+[![Lint](https://github.com/O-X-L/ansible-role-openvpn/actions/workflows/lint.yml/badge.svg)](https://github.com/O-X-L/ansible-role-openvpn/actions/workflows/lint.yml)
+[![Ansible Galaxy](https://badges.oss.oxl.app/galaxy.badge.svg)](https://galaxy.ansible.com/ui/standalone/roles/oxlorg/openvpn)
 
 **Molecule Integration-Tests**:
 
-* Status: [![Molecule Test Status](https://badges.ansibleguy.net/infra_openvpn.molecule.svg)](https://github.com/ansibleguy/_meta_cicd/blob/latest/templates/usr/local/bin/cicd/molecule.sh.j2) |
-[![Functional-Tests](https://github.com/ansibleguy/infra_openvpn/actions/workflows/integration_test_result.yml/badge.svg)](https://github.com/ansibleguy/infra_openvpn/actions/workflows/integration_test_result.yml)
-* Logs: [API](https://ci.ansibleguy.net/api/job/ansible-test-molecule-infra_openvpn/logs?token=2b7bba30-9a37-4b57-be8a-99e23016ce70&lines=1000) | [Short](https://badges.ansibleguy.net/log/molecule_infra_openvpn_test_short.log) | [Full](https://badges.ansibleguy.net/log/molecule_infra_openvpn_test.log)
+* Status: [![Molecule Test Status](https://badges.oss.oxl.app/infra_openvpn.molecule.svg)](https://github.com/O-X-L/ansible-role-oxl-cicd/blob/latest/templates/usr/local/bin/cicd/molecule.sh.j2) |
+[![Functional-Tests](https://github.com/O-X-L/ansible-role-openvpn/actions/workflows/integration_test_result.yml/badge.svg)](https://github.com/O-X-L/ansible-role-openvpn/actions/workflows/integration_test_result.yml)
+* Logs: [API](https://ci.oss.oxl.app/api/job/ansible-test-molecule-infra_openvpn/logs?token=2b7bba30-9a37-4b57-be8a-99e23016ce70&lines=1000) | [Short](https://badges.oss.oxl.app/log/molecule_infra_openvpn_test_short.log) | [Full](https://badges.oss.oxl.app/log/molecule_infra_openvpn_test.log)
 
-Internal CI: [Tester Role](https://github.com/ansibleguy/_meta_cicd) | [Jobs API](https://github.com/O-X-L/github-self-hosted-jobs-systemd)
+Internal CI: [Tester Role](https://github.com/O-X-L/ansible-role-oxl-cicd) | [Jobs API](https://github.com/O-X-L/github-self-hosted-jobs-systemd)
 
 **Tested:**
 * Debian 11
@@ -50,13 +50,13 @@ This role uses the [OpenSource](https://github.com/OpenVPN/openvpn) [OpenVPN Com
 
 ```bash
 # latest
-ansible-galaxy role install git+https://github.com/ansibleguy/infra_openvpn
+ansible-galaxy role install git+https://github.com/O-X-L/ansible-role-openvpn
 
 # from galaxy
-ansible-galaxy install ansibleguy.infra_openvpn
+ansible-galaxy install oxlorg.openvpn
 
 # or to custom role-path
-ansible-galaxy install ansibleguy.infra_openvpn --roles-path ./roles
+ansible-galaxy install oxlorg.openvpn --roles-path ./roles
 
 # install dependencies
 ansible-galaxy install -r requirements.yml
@@ -78,7 +78,7 @@ ansible-galaxy install -r requirements.yml
 
 * You want a simple **Ansible GUI**?
 
-  Check-out this [Ansible WebUI](https://github.com/ansibleguy/webui)
+  Check-out this [Ansible WebUI](https://github.com/O-X-L/ansible-webui)
 
 ----
 
@@ -171,7 +171,7 @@ ansible-playbook -K -D -i inventory/hosts.yml playbook.yml -e auto_restart=yes
 
 * **Note:** Most of the role's functionality can be opted in or out.
 
-  For all available options - see the default-config located in [the main defaults-file](https://github.com/ansibleguy/infra_openvpn/blob/latest/defaults/main/1_main.yml)!
+  For all available options - see the default-config located in [the main defaults-file](https://github.com/O-X-L/ansible-role-openvpn/blob/latest/defaults/main/1_main.yml)!
 
 
 * **Warning:** Not every setting/variable you provide will be checked for validity. Bad config might break the role!

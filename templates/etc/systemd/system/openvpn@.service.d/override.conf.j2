@@ -1,9 +1,9 @@
 # {{ ansible_managed }}
-# ansibleguy.infra_openvpn
+# oxlorg.openvpn
 
 [Unit]
 Description=OpenVPN server '%I'
-Documentation=https://github.com/ansibleguy/infra_openvpn
+Documentation=https://github.com/O-X-L/ansible-role-openvpn
 
 {% set path_instance = OVPN_CONFIG.path.base + '/' + OVPN_CONFIG.prefix_instance %}
 [Service]

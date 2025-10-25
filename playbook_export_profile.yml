@@ -28,7 +28,7 @@
   tasks:
     - name: OpenVPN | Export Profile
       ansible.builtin.import_role:
-        name: ansibleguy.infra_openvpn
+        name: oxlorg.openvpn
         tasks_from: export_profile/main.yml
       run_once: true
       tags: skip_ansible_lint  # run_once in strategy free

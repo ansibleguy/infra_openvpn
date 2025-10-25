@@ -17,15 +17,15 @@
           auth:
             providers: ['certificate', 'system']
           port: 1194
-          dns: 'ovpn.test.ansibleguy.net'
+          dns: 'ovpn.test.oxl.at'
 
           pki:
             country: 'AT'
-            email: 'ovpn@test.ansibleguy.net'
+            email: 'ovpn@test.oxl.at'
             org: 'AnsibleGuy Test'
             ou: 'TEST'
             province: 'TestProvince'
             city: 'Graz'
 
   roles:
-    - ansibleguy.infra_openvpn
+    - oxlorg.openvpn

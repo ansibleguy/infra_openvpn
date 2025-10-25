@@ -21,7 +21,7 @@
 
 - name: "{{ task_prefix }} | Server certificate"
   ansible.builtin.include_role:
-    name: ansibleguy.infra_pki
+    name: oxlorg.pki
     tasks_from: single_cert.yml
   args:
     apply:

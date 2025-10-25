@@ -58,4 +58,4 @@ OVPN_HC:
     'net.ipv4.conf.all.rp_filter': 2
 
 random_pwd_length: '50'  # must be string-type
-tmp_pwd_file_prefix: '/tmp/.ansibleguy.infra_openvpn_'
+tmp_pwd_file_prefix: '/tmp/.oxlorg.openvpn_'
